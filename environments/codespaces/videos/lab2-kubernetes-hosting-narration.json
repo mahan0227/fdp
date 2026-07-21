@@ -1,0 +1,42 @@
+{
+  "video": "lab2-kubernetes-hosting.mp4",
+  "track": "GitHub Codespaces Edition",
+  "scenes": [
+    {
+      "scene": 1,
+      "start": 0.0,
+      "duration": 13.61,
+      "narration": "Lab 2 on GitHub Codespaces Edition. Same environment as Lab 1. Deploy three replicas, expose a Service, open the portal in the browser, watch load balancing and self healing, then scale."
+    },
+    {
+      "scene": 2,
+      "start": 13.61,
+      "duration": 9.99,
+      "narration": "Create app yaml from the lab guide with three replicas and health probes on health z. Apply it. Get pods wide \u2014 you should see pods on both nodes."
+    },
+    {
+      "scene": 3,
+      "start": 23.6,
+      "duration": 13.69,
+      "narration": "Expose the deployment as a NodePort Service. Capture PORT and NODE IP into the URL variable, then curl URL slash api. You should see version one point zero and a pod hostname in served by."
+    },
+    {
+      "scene": 4,
+      "start": 37.3,
+      "duration": 17.83,
+      "narration": "Kind NodePorts are not visible to your laptop browser. In a second terminal run kubectl port forward service hello c n c f eighty eighty to eighty. Wait for Forwarding from. Then Ports tab, eighty eighty, Open in Browser. Refresh a few times \u2014 served by changes."
+    },
+    {
+      "scene": 5,
+      "start": 55.12,
+      "duration": 12.42,
+      "narration": "The portal is live on Kubernetes. Version still one point zero. Click refresh several times \u2014 served by should rotate across the three pods. That is Service load balancing, visible in the browser."
+    },
+    {
+      "scene": 6,
+      "start": 67.54,
+      "duration": 18.81,
+      "narration": "Also prove with a curl loop on slash api \u2014 served by cycles. Delete one pod and watch Kubernetes recreate it. That is self healing. Scale to five replicas, confirm five pods, then scale back to three. Commit app yaml and keep the environment open for Lab 3. Checkpoint two complete."
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "video": "lab2-kubernetes-hosting.mp4",
+  "track": "Killercoda Edition",
+  "scenes": [
+    {
+      "scene": 1,
+      "start": 0.0,
+      "duration": 13.07,
+      "narration": "Lab 2 on Killercoda Edition. Same environment as Lab 1. Deploy three replicas, expose a Service, open the portal in the browser, watch load balancing and self healing, then scale."
+    },
+    {
+      "scene": 2,
+      "start": 13.07,
+      "duration": 9.99,
+      "narration": "Create app yaml from the lab guide with three replicas and health probes on health z. Apply it. Get pods wide \u2014 you should see pods on both nodes."
+    },
+    {
+      "scene": 3,
+      "start": 23.07,
+      "duration": 13.2,
+      "narration": "Expose the deployment as a NodePort Service. Capture the NodePort into PORT, then curl localhost dollar port slash api. You should see version one point zero and a pod hostname in served by."
+    },
+    {
+      "scene": 4,
+      "start": 36.26,
+      "duration": 11.21,
+      "narration": "Open http localhost dollar port in your browser \u2014 same NodePort as curl. Refresh a few times. Served by should change as Kubernetes load balances across pods."
+    },
+    {
+      "scene": 5,
+      "start": 47.47,
+      "duration": 12.42,
+      "narration": "The portal is live on Kubernetes. Version still one point zero. Click refresh several times \u2014 served by should rotate across the three pods. That is Service load balancing, visible in the browser."
+    },
+    {
+      "scene": 6,
+      "start": 59.89,
+      "duration": 18.81,
+      "narration": "Also prove with a curl loop on slash api \u2014 served by cycles. Delete one pod and watch Kubernetes recreate it. That is self healing. Scale to five replicas, confirm five pods, then scale back to three. Commit app yaml and keep the environment open for Lab 3. Checkpoint two complete."
+    }
+  ]
+}

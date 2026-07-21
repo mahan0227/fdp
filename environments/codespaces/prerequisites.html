@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>prerequisites</title><style>code{white-space:pre-wrap}</style><style>body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 40px 24px; color: #1E293B; line-height: 1.65; background: #FFFFFF; }
+h1 { color: #1E3A5F; font-family: Cambria, Georgia, serif; border-bottom: 3px solid #2196F3; padding-bottom: 10px; }
+h2 { color: #1E3A5F; font-family: Cambria, Georgia, serif; margin-top: 2em; }
+h3 { color: #2196F3; margin-top: 1.5em; }
+code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+pre { background: #0F172A; color: #E2E8F0; padding: 16px 20px; border-radius: 10px; overflow-x: auto; }
+pre code { background: none; color: inherit; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
+th { background: #1E3A5F; color: #fff; text-align: left; }
+th, td { border: 1px solid #CBD5E1; padding: 9px 13px; font-size: 0.95em; }
+tr:nth-child(even) { background: #F8FAFC; }
+blockquote { border-left: 4px solid #2196F3; background: #E3F2FD; margin: 1em 0; padding: 10px 18px; border-radius: 0 8px 8px 0; }
+a { color: #1E88E5; }
+li { margin: 4px 0; }
+hr { border: none; border-top: 1px solid #CBD5E1; margin: 2em 0; }</style></head><body>
+<h1>Before the Workshop — Participant Prerequisites (Codespaces option, 5 minutes, zero installs)</h1>
+<p>Everything in this workshop runs <strong>in your browser</strong>, inside a GitHub Codespace (a full VS Code + Linux dev machine in the cloud). You will not install anything on your computer.</p>
+<blockquote>
+<p><strong>Lab environment option B — GitHub Codespaces.</strong> Same Labs 1 → 2 → 3 as the Killercoda option. If you chose <strong>Killercoda</strong> instead, stop and use <code>prerequisites.md</code> (see also <code>prerequisites-chooser.md</code>).</p>
+</blockquote>
+<h2>Create two free accounts (do this before the session)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Account</th>
+<th>Where</th>
+<th>Used for</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>GitHub</strong></td>
+<td>https://github.com/signup</td>
+<td>Hosts your code, runs the CI/CD pipeline, <strong>and provides your lab environment</strong> (Codespaces — included free with every personal account)</td>
+<td>Free</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Docker Hub</strong></td>
+<td>https://hub.docker.com/signup</td>
+<td>The registry your container image ships to — <strong>write your username down</strong>, you'll type it several times</td>
+<td>Free</td>
+</tr>
+</tbody>
+</table>
+<p>That's one account fewer than the Killercoda track — GitHub Codespaces <em>is</em> the lab environment, and it logs you into git automatically (no GitHub token to create).</p>
+<h2>One thing to prepare in advance (2 minutes)</h2>
+<p>Create a <strong>Docker Hub access token</strong> (used by <code>docker login</code> in Lab 1 and by the pipeline in Lab 3, safer than your password):</p>
+<ol>
+<li>Sign in at hub.docker.com → click your avatar → <strong>Account Settings → Security → New Access Token</strong></li>
+<li>Name: <code>workshop</code> · Permissions: <strong>Read &amp; Write</strong> → <strong>Generate</strong></li>
+<li><strong>Copy it somewhere safe now</strong> — Docker Hub shows it only once.</li>
+</ol>
+<h2>Good to know about Codespaces (nothing to do, just read)</h2>
+<ul>
+<li>Every personal GitHub account includes <strong>120 core-hours/month free</strong> — this workshop uses roughly 4–8 of them.</li>
+<li>Your codespace <strong>auto-stops after 30 minutes idle</strong> but <strong>nothing is lost</strong> — files, git history, everything persists. You reopen it and continue where you left off.</li>
+<li>A stopped codespace is kept for ~30 days; your pushed code lives on GitHub forever regardless.</li>
+</ul>
+<h2>Quick self-check (1 minute)</h2>
+<ul>
+<li>[ ] I can sign in to GitHub and see https://github.com/codespaces (an empty list is fine)</li>
+<li>[ ] I know my Docker Hub <strong>username</strong> and have my <strong>access token</strong> saved</li>
+</ul>
+<h2>What you'll build</h2>
+<p>One microservice, end to end across <strong>three labs</strong>: <strong>Lab 1</strong> build &amp; containerize a web portal + JSON API → <strong>Lab 2</strong> run replicated on kind (curl <code>/api</code> + Codespaces port-forward to open the portal) → <strong>Lab 3</strong> deliver version 2.0 through a CI/CD pipeline into that same cluster, live. All in the browser, all free. (~70–80 minutes hands-on.)</p>
+<p><em>Browser requirements: any modern browser (Chrome, Edge, Firefox, Safari). A laptop/desktop is strongly recommended over a tablet — you'll be copy-pasting commands.</em></p>
+</body></html>

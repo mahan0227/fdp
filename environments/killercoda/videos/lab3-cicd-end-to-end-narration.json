@@ -1,0 +1,42 @@
+{
+  "video": "lab3-cicd-end-to-end.mp4",
+  "track": "Killercoda Edition",
+  "scenes": [
+    {
+      "scene": 1,
+      "start": 0.0,
+      "duration": 14.35,
+      "narration": "Lab 3 on Killercoda Edition. You will bump to version two point zero, let GitHub Actions test, build, and push, then roll out into your cluster. Prove with curl slash api and by refreshing the browser portal."
+    },
+    {
+      "scene": 2,
+      "start": 14.35,
+      "duration": 14.17,
+      "narration": "In the GitHub repo, add Actions secrets for Docker Hub username and token. Edit app py so the version default is two point zero and update the message in payload. Edit the Dockerfile APP VERSION to two point zero."
+    },
+    {
+      "scene": 3,
+      "start": 28.52,
+      "duration": 13.49,
+      "narration": "Add test app py that hits slash api and asserts version two point zero. Add the cicd workflow from the lab guide. Commit and push. Watch the Actions run go green, then confirm Docker Hub shows tag two point zero."
+    },
+    {
+      "scene": 4,
+      "start": 42.0,
+      "duration": 11.32,
+      "narration": "Back in the lab environment, set the deployment image to two point zero. Wait for rollout status complete. Curl slash api \u2014 every response should show version two point zero."
+    },
+    {
+      "scene": 5,
+      "start": 53.33,
+      "duration": 14.05,
+      "narration": "Refresh http localhost port \u2014 version two point zero on the portal. You should see version two point zero and the new pipeline message. Curl and the portal now agree \u2014 that is the full cloud native loop, visible in the browser."
+    },
+    {
+      "scene": 6,
+      "start": 67.38,
+      "duration": 18.58,
+      "narration": "Run rollout undo once. Curl slash api returns version one point zero again. Refresh the portal \u2014 same rollback, visible in the browser. Checkpoint three: commit, pipeline, registry, rolling update, visible in the portal, reversible in one command. Workshop labs complete."
+    }
+  ]
+}

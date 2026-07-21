@@ -1,0 +1,48 @@
+{
+  "video": "lab1-build-and-ship.mp4",
+  "track": "Killercoda Edition",
+  "scenes": [
+    {
+      "scene": 1,
+      "start": 0.0,
+      "duration": 16.29,
+      "narration": "Lab 1 on Killercoda Edition. Follow the lab guide step by step. You will create hello c n c f with a web portal at slash and JSON at slash api, open the portal in the browser, prove container isolation, then ship to Docker Hub and GitHub."
+    },
+    {
+      "scene": 2,
+      "start": 16.29,
+      "duration": 14.41,
+      "narration": "Lab zero on Killercoda: open the Kubernetes playground, verify two Ready nodes and Docker, create the hello c n c f repo, clone it, and wire the GitHub token so push works. Keep this environment open for all three labs."
+    },
+    {
+      "scene": 3,
+      "start": 30.7,
+      "duration": 22.02,
+      "narration": "Paste the full app.py from the lab guide. Slash serves the HTML web portal. Slash api returns JSON with version, served by, and message \u2014 that is what curl uses. Health z returns ok for Kubernetes probes. Add requirements and the Dockerfile with APP VERSION one point zero. Confirm the first line imports os and socket."
+    },
+    {
+      "scene": 4,
+      "start": 52.72,
+      "duration": 14.4,
+      "narration": "Build the image tagged one point zero. Run it publishing host eighty eighty. Curl localhost eighty eighty slash api and confirm version one point zero and a served by hostname. Curl health z and confirm ok."
+    },
+    {
+      "scene": 5,
+      "start": 67.12,
+      "duration": 16.09,
+      "narration": "After curl succeeds, open a new browser tab to http localhost eighty eighty. You should see the hello c n c f web portal \u2014 version one point zero, served by, and refresh. That is the same app as slash api, just for humans."
+    },
+    {
+      "scene": 6,
+      "start": 83.21,
+      "duration": 13.66,
+      "narration": "Here is what the portal looks like: cloud native workshop branding, hello c n c f, version one point zero, served by the container hostname, and a refresh button. In Lab 2 that refresh will prove load balancing."
+    },
+    {
+      "scene": 7,
+      "start": 96.87,
+      "duration": 17.97,
+      "narration": "Run a second container on eighty eighty one. Curl both slash api endpoints \u2014 served by differs. That is isolation. Log in to Docker Hub, tag and push one point zero. Commit and git push so your code survives. Checkpoint one complete \u2014 keep this environment open for Lab 2."
+    }
+  ]
+}

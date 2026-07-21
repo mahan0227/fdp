@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>demo-video-scripts</title><style>code{white-space:pre-wrap}</style><style>body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 40px 24px; color: #1E293B; line-height: 1.65; background: #FFFFFF; }
+h1 { color: #1E3A5F; font-family: Cambria, Georgia, serif; border-bottom: 3px solid #2196F3; padding-bottom: 10px; }
+h2 { color: #1E3A5F; font-family: Cambria, Georgia, serif; margin-top: 2em; }
+h3 { color: #2196F3; margin-top: 1.5em; }
+code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+pre { background: #0F172A; color: #E2E8F0; padding: 16px 20px; border-radius: 10px; overflow-x: auto; }
+pre code { background: none; color: inherit; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
+th { background: #1E3A5F; color: #fff; text-align: left; }
+th, td { border: 1px solid #CBD5E1; padding: 9px 13px; font-size: 0.95em; }
+tr:nth-child(even) { background: #F8FAFC; }
+blockquote { border-left: 4px solid #2196F3; background: #E3F2FD; margin: 1em 0; padding: 10px 18px; border-radius: 0 8px 8px 0; }
+a { color: #1E88E5; }
+li { margin: 4px 0; }
+hr { border: none; border-top: 1px solid #CBD5E1; margin: 2em 0; }</style></head><body>
+<h1>Demo Video Recording Scripts — Cloud Native Workshop Labs</h1>
+<h2>GitHub Codespaces Edition</h2>
+<p>Shot-by-shot scripts matching the Codespaces lab guide and MP4s in <code>environments/codespaces/videos/</code>.</p>
+<p><strong>App faces:</strong> browser portal at <code>/</code> · JSON at <code>/api</code> · probes at <code>/healthz</code>  </p>
+<p><strong>Target output:</strong> 3 detailed videos · Lab 1 · Lab 2 · Lab 3  </p>
+<p><strong>Environment:</strong> ONE GitHub Codespace on repo <code>hello-cncf</code>. Lab 0 creates a 2-node <strong>kind</strong> cluster.</p>
+<blockquote><p>Killercoda twin: <code>environments/killercoda/demo-video-scripts.md</code>. Regenerate: <code>python3 tools/generate_lab_videos.py</code></p></blockquote>
+<hr />
+<h1>VIDEO — Lab 1 · Build &amp; Ship the Microservice</h1>
+<p><strong>Start state:</strong> GitHub signed in · Docker Hub token ready · no codespace yet</p>
+<h3>🎬 SHOT 1 — Cold open</h3>
+<p>| 🗣️ SAY | &quot;Welcome to the Cloud Native workshop labs on GitHub Codespaces. Three labs in one codespace: build and ship, Kubernetes hosting with kind, then CI/CD end to end. You install nothing on your computer.&quot; |</p>
+<h3>🎬 SHOT 2 — Lab 0 boot</h3>
+<p>| 🖱️ | New repo <code>hello-cncf</code> → Code → Codespaces → Create codespace on main |</p>
+<p>| ⌨️ TYPE | Lab 0 verify + install + <code>kind create cluster</code> from the lab guide |</p>
+<p>| 🗣️ SAY | &quot;Repo already cloned, Docker ready, two node kind cluster Ready. Untaint the control plane so pods can schedule on both nodes.&quot; |</p>
+<h3>🎬 SHOT 3 — Create app + Dockerfile</h3>
+<p>| ⌨️/🖱️ | Paste <code>app.py</code> + <code>Dockerfile</code> (portal at <code>/</code>, JSON at <code>/api</code>) |</p>
+<p>| 🗣️ SAY | &quot;Slash serves the web portal. Slash api returns JSON for curl. Health z is the probe hook.&quot; |</p>
+<h3>🎬 SHOT 4 — Build, curl, Open in Browser, push</h3>
+<p>| ⌨️ TYPE | <code>docker build</code> · run 8080/8081 · <code>curl localhost:8080/api</code> · <strong>PORTS → 8080 → Open in Browser</strong> · prove isolation · login · tag · push · <code>git push</code> |</p>
+<p>| 🗣️ SAY | &quot;Curl slash api for JSON. Open the Ports tab, select eighty eighty, Open in Browser to launch the portal. Prove isolation, then ship.&quot; |</p>
+<p>| 🎬 | Stop recording |</p>
+<hr />
+<h1>VIDEO — Lab 2 · Host &amp; Manage on Kubernetes</h1>
+<p><strong>Start state:</strong> Same codespace · image pushed · kind cluster Ready</p>
+<h3>🎬 SHOT 1 — Cold open</h3>
+<p>| 🗣️ SAY | &quot;Lab 2, in the same Codespace. Replicated, load balanced, self healing, health probed.&quot; |</p>
+<h3>🎬 SHOT 2 — Deploy</h3>
+<p>| ⌨️ TYPE | <code>kubectl apply -f app.yaml</code> · <code>kubectl get pods -o wide</code> |</p>
+<p>| 🗣️ SAY | &quot;Three pods spread across both kind nodes.&quot; |</p>
+<h3>🎬 SHOT 3 — Service + <code>$URL</code> + port-forward portal</h3>
+<p>| ⌨️ TYPE | expose NodePort · <code>$URL</code> · <code>curl -s $URL/api</code> · <code>kubectl port-forward svc/hello-cncf 8080:80</code> · <strong>PORTS → Open in Browser</strong> |</p>
+<p>| 🗣️ SAY | &quot;Curl slash api via the kind node URL. For the browser, port forward to localhost eighty eighty, then Open in Browser. Kind NodePorts are not visible to your laptop.&quot; |</p>
+<h3>🎬 SHOT 4 — Load balance, heal, scale ⭐</h3>
+<p>| ⌨️ TYPE | curl loop on <code>$URL/api</code> · refresh portal · delete a pod · scale 5 → 3 · git push <code>app.yaml</code> |</p>
+<p>| 🗣️ SAY | &quot;Served by changes every request on curl and on the portal. Kill a pod — replacement appears. Keep this codespace open for Lab 3.&quot; |</p>
+<p>| 🎬 | Stop recording |</p>
+<hr />
+<h1>VIDEO — Lab 3 · CI/CD End to End</h1>
+<p><strong>Start state:</strong> Same codespace · secrets <code>DOCKERHUB_USERNAME</code> + <code>DOCKERHUB_TOKEN</code> set</p>
+<h3>🎬 SHOT 1 — Cold open</h3>
+<p>| 🗣️ SAY | &quot;Lab 3: edit, commit, and push from the codespace. Actions builds in the cloud. You roll out on the same kind cluster.&quot; |</p>
+<h3>🎬 SHOT 2 — v2.0 + tests + workflow</h3>
+<p>| 🖱️/⌨️ | Edit to 2.0 · add <code>test_app.py</code> (asserts <code>/api</code>) · add <code>.github/workflows/cicd.yml</code> · commit · push |</p>
+<p>| 🗣️ SAY | &quot;That push triggers the pipeline. Watch Actions go green.&quot; |</p>
+<h3>🎬 SHOT 3 — Rollout + curl + portal + undo ⭐</h3>
+<p>| ⌨️ TYPE | <code>kubectl set image ...:2.0</code> · <code>curl -s $URL/api</code> · <strong>refresh port-forward portal → 2.0</strong> · <code>kubectl rollout undo</code> |</p>
+<p>| 🗣️ SAY | &quot;Curl and the portal both show version two point zero. Undo once — version one point zero is back.&quot; |</p>
+<p>| 🎬 | Stop recording |</p>
+<hr />
+<h2>After Recording / Packaging</h2>
+<ul>
+<li>Export 1080p H.264 into <code>environments/codespaces/videos/</code></li>
+<li>Names: <code>lab1-build-and-ship.mp4</code>, <code>lab2-kubernetes-hosting.mp4</code>, <code>lab3-cicd-end-to-end.mp4</code></li>
+<li>Or regenerate: <code>python3 tools/generate_lab_videos.py</code></li>
+</ul>
+</body></html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>lab-guide</title><style>code{white-space:pre-wrap}</style><style>body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 40px 24px; color: #1E293B; line-height: 1.65; background: #FFFFFF; }
+h1 { color: #1E3A5F; font-family: Cambria, Georgia, serif; border-bottom: 3px solid #2196F3; padding-bottom: 10px; }
+h2 { color: #1E3A5F; font-family: Cambria, Georgia, serif; margin-top: 2em; }
+h3 { color: #2196F3; margin-top: 1.5em; }
+code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+pre { background: #0F172A; color: #E2E8F0; padding: 16px 20px; border-radius: 10px; overflow-x: auto; }
+pre code { background: none; color: inherit; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
+th { background: #1E3A5F; color: #fff; text-align: left; }
+th, td { border: 1px solid #CBD5E1; padding: 9px 13px; font-size: 0.95em; }
+tr:nth-child(even) { background: #F8FAFC; }
+blockquote { border-left: 4px solid #2196F3; background: #E3F2FD; margin: 1em 0; padding: 10px 18px; border-radius: 0 8px 8px 0; }
+a { color: #1E88E5; }
+li { margin: 4px 0; }
+hr { border: none; border-top: 1px solid #CBD5E1; margin: 2em 0; }</style></head><body>
+<h1>Lab Guide: Cloud Native Workshop — One App, One Environment, End to End</h1>
+<p><strong>The session:</strong> you will build ONE microservice and take it through the entire cloud native journey — containerize it, run it replicated on a real 2-node Kubernetes cluster, and deliver an update through a CI/CD pipeline into that same running cluster.</p>
+<p><strong>The environment:</strong> the whole hands-on session lives in <strong>one Killercoda browser session</strong> — and because Killercoda expires after 60 minutes, <strong>your GitHub repo is the durable home for your work</strong>: you clone it in Lab 0, push after every lab, and clone it back in ~2 minutes if the session ever dies (a free, real 2-node Kubernetes cluster with Docker on board). Lab 3 adds GitHub — also browser-only. <strong>You install nothing on your computer.</strong></p>
+<p><strong>Duration:</strong> 70–80 minutes · <strong>Cost:</strong> $0</p>
+<blockquote>
+<p><strong>Choose your lab environment</strong> (same Labs 1 → 2 → 3 either way):<br />
+- <strong>This guide = Killercoda</strong> — prep sheet: <code>prerequisites.md</code> (or <code>environments/killercoda/</code>)<br />
+- <strong>Codespaces option</strong> — use <code>../codespaces/lab-guide.md</code> + <code>prerequisites-codespaces.md</code> (or <code>../codespaces/</code>)</p>
+<p>Complete the matching prerequisites before the session. Same app, same checkpoints; only Lab 0 and how you reach the Service differ.</p>
+</blockquote>
+<h2>The application: <code>hello-cncf</code></h2>
+<p>One tiny Python microservice, engineered so the platform's invisible behavior becomes visible:</p>
+<table>
+<thead>
+<tr>
+<th>Design choice</th>
+<th>What it makes visible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>served_by: &lt;hostname&gt;</code> in every response</td>
+<td><strong>Load balancing</strong> — repeated requests show different pod names</td>
+</tr>
+<tr>
+<td><code>version</code> in every response</td>
+<td><strong>Rolling updates</strong> — watch v1.0 become v2.0 live</td>
+</tr>
+<tr>
+<td><code>/healthz</code> endpoint</td>
+<td><strong>Probes &amp; self-healing</strong> — Kubernetes' hook into the app</td>
+</tr>
+<tr>
+<td>Stateless, env-configured</td>
+<td><strong>Scalability</strong> — any replica serves any request</td>
+</tr>
+<tr>
+<td>Browser portal at <code>/</code> + JSON at <code>/api</code></td>
+<td><strong>Same app, two faces</strong> — humans use the portal; curl demos use <code>/api</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Lab 0: Boot Your Environment (5 minutes — do once, keep it open all session)</h2>
+<ol>
+<li>Open <strong>https://killercoda.com/playgrounds/scenario/kubernetes</strong> and sign in.</li>
+<li>A 2-node cluster boots (~30 s). Verify:</li>
+</ol>
+<pre><code class="language-bash">kubectl get nodes
+</code></pre>
+<p>Expected:</p>
+<pre><code>NAME           STATUS   ROLES           AGE   VERSION
+controlplane   Ready    control-plane   ...   v1.3x.x
+node01         Ready    &lt;none&gt;          ...   v1.3x.x
+</code></pre>
+<ol start="3">
+<li>Guarantee Docker is present (one line — installs into the <em>browser VM</em> if missing, never onto your machine):</li>
+</ol>
+<pre><code class="language-bash">which docker || (apt-get update -qq &amp;&amp; apt-get install -y -qq docker.io)
+docker version --format 'Docker {{.Server.Version}} ready'
+</code></pre>
+<p>Expected: <code>Docker 2x.x.x ready</code></p>
+<ol start="4">
+<li><strong>Create your GitHub repo and clone it — this is where your work lives.</strong></li>
+</ol>
+<p>On <strong>github.com</strong>: <strong>+ → New repository</strong> → name it <code>hello-cncf</code> → <strong>Public</strong> → check <strong>Add a README</strong> → <strong>Create repository</strong>. (Lab 3's pipeline will run from this same repo.)</p>
+<p>Back in the Killercoda terminal — set your identity and clone (replace both placeholders):</p>
+<pre><code class="language-bash">git config --global user.name &quot;&lt;GHUSER&gt;&quot;
+git config --global user.email &quot;&lt;GHUSER&gt;@users.noreply.github.com&quot;
+git clone https://github.com/&lt;GHUSER&gt;/hello-cncf.git
+cd hello-cncf
+</code></pre>
+<p>Expected: <code>Cloning into 'hello-cncf'... done.</code> — your prompt is now inside <code>hello-cncf/</code>.</p>
+<ol start="5">
+<li><strong>Wire the push credential once</strong> (uses the GitHub token from your prerequisites sheet):</li>
+</ol>
+<pre><code class="language-bash">git remote set-url origin https://&lt;GHUSER&gt;:&lt;GHTOKEN&gt;@github.com/&lt;GHUSER&gt;/hello-cncf.git
+git push origin main &amp;&amp; echo &quot;PUSH OK&quot;
+</code></pre>
+<p>Expected: <code>Everything up-to-date</code> (or a small push), then <code>PUSH OK</code>.<br />
+<strong>🔧 If it fails</strong> with <code>Invalid username or password</code>: the token is wrong or lacks scope → regenerate it with <strong><code>repo</code></strong> scope and re-run the <code>set-url</code> line. <em>(The token lives only in this throwaway VM, destroyed when the session ends.)</em></p>
+<blockquote>
+<h3>💾 THE GOLDEN RULE OF THIS WORKSHOP</h3>
+<p><strong>Do all your work inside <code>hello-cncf/</code>, and push after every lab.</strong><br />
+Killercoda destroys your VM after 60 minutes — but everything you pushed is safe on GitHub, and your image is safe on Docker Hub. A <strong>💾 Save your work</strong> box ends each lab; the <strong>🔄 Session expired?</strong> box below brings you back in ~2 minutes.</p>
+<h3>🔄 SESSION EXPIRED? Recover in 2 minutes (bookmark this box)</h3>
+<p>Open a fresh playground → re-run Lab 0 steps 2–3 (cluster + docker check) → then paste:</p>
+<pre><code>git config --global user.name "&lt;GHUSER&gt;"
+git config --global user.email "&lt;GHUSER&gt;@users.noreply.github.com"
+git clone https://&lt;GHUSER&gt;:&lt;GHTOKEN&gt;@github.com/&lt;GHUSER&gt;/hello-cncf.git
+cd hello-cncf
+kubectl apply -f app.yaml 2&gt;/dev/null || echo "(no app.yaml yet — you were still in Lab 1)"
+kubectl get pods
+</code></pre>
+<p>Your code is back, and if you'd reached Lab 2 your app is already redeploying — Kubernetes pulls the image straight from Docker Hub, so <strong>nothing is rebuilt</strong>. Need the Service again? Re-run Lab 2 step 3 (<code>kubectl expose ...</code> + capture <code>PORT</code>).</p>
+<p><strong>Session note:</strong> Killercoda sessions last 60 minutes. If yours expires mid-workshop, open a fresh playground and re-run Lab 0 + the "Fast rebuild" box at the end of Lab 2 — under 3 minutes to be fully back.</p>
+</blockquote>
+<hr />
+<h2>Lab 1: Build &amp; Ship the Microservice (20 minutes)</h2>
+<p><em>Same terminal. Objective: understand the app, containerize it, prove isolation, push to the registry.</em></p>
+<h3>Steps</h3>
+<blockquote>
+<h3>⚠️ READ THIS ONCE — how the file-creation blocks work</h3>
+<p>Blocks that start with <code>cat &gt; somefile &lt;&lt; 'EOF'</code> and end with a line containing only <code>EOF</code> are <strong>shell commands</strong>. The first and last lines create the file — <strong>they must never appear inside it</strong>.<br />
+- ✅ Paste the <strong>whole block</strong> at the terminal <strong><code>$</code> prompt</strong> and press Enter.<br />
+- ❌ Never paste these blocks inside an editor (nano/vim) — that's how <code>cat &gt; app.py</code> ends up <em>inside</em> your file.<br />
+- Every file step is followed by a <strong>✔ Verify</strong> check that catches mistakes instantly, with a one-line fix.<br />
+- Prefer an editor? Use <strong>Plan B</strong> at the end of Lab 1 — file contents shown <em>without</em> the cat/EOF lines.</p>
+</blockquote>
+<ol>
+<li><strong>Create the application</strong> — you're already inside <code>hello-cncf/</code> from Lab 0. Paste the whole block at the <code>$</code> prompt:</li>
+</ol>
+<pre><code class="language-bash">cd ~/hello-cncf
+cat &gt; app.py &lt;&lt; 'EOF'
+import os, socket
+from flask import Flask, jsonify, render_template_string
+
+app = Flask(__name__)
+VERSION = os.getenv(&quot;APP_VERSION&quot;, &quot;1.0&quot;)
+
+PORTAL = &quot;&quot;&quot;
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;/&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;/&gt;
+  &lt;title&gt;hello-cncf&lt;/title&gt;
+  &lt;style&gt;
+    :root { --bg:#0F172A; --card:#1E293B; --accent:#38BDF8; --ok:#34D399; --text:#E2E8F0; --muted:#94A3B8; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; font-family: Segoe UI, system-ui, sans-serif;
+           background: radial-gradient(1200px 600px at 10% -10%, #1E3A5F 0%, var(--bg) 55%);
+           color: var(--text); display:flex; align-items:center; justify-content:center; padding:24px; }
+    .card { width:min(520px,100%); background:var(--card); border:1px solid #334155; border-radius:18px;
+            padding:28px 28px 22px; box-shadow:0 20px 50px rgba(0,0,0,.35); }
+    .eyebrow { color:var(--accent); font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    h1 { margin:8px 0 6px; font-size:28px; }
+    .msg { color:var(--muted); margin:0 0 22px; line-height:1.5; }
+    .grid { display:grid; gap:12px; }
+    .row { background:#0F172A; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; gap:12px; }
+    .k { color:var(--muted); font-size:13px; }
+    .v { font-weight:700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break:break-all; text-align:right; }
+    .v.ok { color:var(--ok); }
+    .hint { margin-top:18px; font-size:13px; color:var(--muted); }
+    button { margin-top:14px; width:100%; border:0; border-radius:10px; padding:12px 14px; font-weight:700;
+             background:var(--accent); color:#0F172A; cursor:pointer; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class=&quot;card&quot;&gt;
+    &lt;div class=&quot;eyebrow&quot;&gt;Cloud Native Workshop&lt;/div&gt;
+    &lt;h1&gt;hello-cncf&lt;/h1&gt;
+    &lt;p class=&quot;msg&quot;&gt;{{ message }}&lt;/p&gt;
+    &lt;div class=&quot;grid&quot;&gt;
+      &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;k&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;v ok&quot;&gt;{{ version }}&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;k&quot;&gt;served_by&lt;/span&gt;&lt;span class=&quot;v&quot;&gt;{{ served_by }}&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;k&quot;&gt;service&lt;/span&gt;&lt;span class=&quot;v&quot;&gt;{{ service }}&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;button onclick=&quot;location.reload()&quot;&gt;Refresh — watch served_by change&lt;/button&gt;
+    &lt;p class=&quot;hint&quot;&gt;JSON API for curl demos: &lt;code&gt;/api&lt;/code&gt; · health: &lt;code&gt;/healthz&lt;/code&gt;&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&quot;&quot;&quot;
+
+def payload():
+    return dict(
+        service=&quot;hello-cncf&quot;,
+        version=VERSION,
+        served_by=socket.gethostname(),
+        message=&quot;Hello from Cloud Native!&quot;,
+    )
+
+@app.get(&quot;/&quot;)
+def portal():
+    return render_template_string(PORTAL, **payload())
+
+@app.get(&quot;/api&quot;)
+def api():
+    return jsonify(payload())
+
+@app.get(&quot;/healthz&quot;)
+def healthz():
+    return &quot;ok&quot;, 200
+
+if __name__ == &quot;__main__&quot;:
+    app.run(host=&quot;0.0.0.0&quot;, port=8080)
+EOF
+ls
+</code></pre>
+<p>Expected: <code>app.py</code></p>
+<p><strong>✔ Verify</strong> (catches the classic paste mistake in 2 seconds):</p>
+<pre><code class="language-bash">head -1 app.py &amp;&amp; grep -c &quot;cat &gt; \|^EOF&quot; app.py
+</code></pre>
+<p>Expected: <code>import os, socket</code> then <code>0</code>. <strong>🔧 If wrong</strong> (you see <code>cat &gt; app.py</code> or a count above 0): <code>rm app.py</code>, re-paste the block at the <code>$</code> prompt — or use Plan B below.</p>
+<ol start="2">
+<li><strong>Dependencies + Dockerfile</strong> — the build recipe:</li>
+</ol>
+<pre><code class="language-bash">echo &quot;flask==3.0.3&quot; &gt; requirements.txt
+cat &gt; Dockerfile &lt;&lt; 'EOF'
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+ENV APP_VERSION=1.0
+EXPOSE 8080
+CMD [&quot;python&quot;, &quot;app.py&quot;]
+EOF
+</code></pre>
+<p><strong>✔ Verify:</strong></p>
+<pre><code class="language-bash">head -1 Dockerfile &amp;&amp; grep -c &quot;^EOF&quot; Dockerfile
+</code></pre>
+<p>Expected: <code>FROM python:3.12-slim</code> then <code>0</code>. <strong>🔧 If wrong:</strong> <code>rm Dockerfile</code>, re-paste at the <code>$</code> prompt.</p>
+<ol start="3">
+<li><strong>Build the image:</strong></li>
+</ol>
+<pre><code class="language-bash">docker build -t hello-cncf:1.0 .
+</code></pre>
+<p>Expected (last line): <code>Successfully tagged hello-cncf:1.0</code></p>
+<ol start="4">
+<li><strong>Run &amp; test it (API + web portal):</strong></li>
+</ol>
+<pre><code class="language-bash">docker run -d -p 8080:8080 --name svc1 hello-cncf:1.0
+curl -s localhost:8080/api
+curl -s localhost:8080/healthz
+</code></pre>
+<p>Expected: JSON with <code>"version":"1.0"</code> and <code>"served_by"</code>, then <code>ok</code>. <strong>Remember <code>served_by</code></strong> — it becomes the star of Lab 2.</p>
+<p><strong>🌐 Open the web portal:</strong> in a new browser tab open <strong>http://localhost:8080</strong><br />
+   You should see the hello-cncf portal (version + served_by). Click <strong>Refresh</strong>. <em>(Killercoda exposes localhost ports to your laptop browser.)</em></p>
+<ol start="5">
+<li><strong>Prove isolation</strong> — second copy, same host, zero conflict:</li>
+</ol>
+<pre><code class="language-bash">docker run -d -p 8081:8080 --name svc2 hello-cncf:1.0
+curl -s localhost:8080/api | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'
+curl -s localhost:8081/api | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'
+</code></pre>
+<p>Expected: <strong>two different hostnames</strong>. Optional: open <strong>http://localhost:8081</strong> for a second portal instance.</p>
+<ol start="6">
+<li><strong>Ship it to the registry</strong> (the bridge to Labs 2 and 3):</li>
+</ol>
+<pre><code class="language-bash">docker login          # Docker Hub username + password (or token)
+docker tag hello-cncf:1.0 &lt;DOCKERUSER&gt;/hello-cncf:1.0
+docker push &lt;DOCKERUSER&gt;/hello-cncf:1.0
+</code></pre>
+<p>Expected: ends with a <code>sha256:</code> digest. Browser-verify: <code>hub.docker.com/r/&lt;DOCKERUSER&gt;/hello-cncf</code> shows tag <code>1.0</code>.</p>
+<h3>💾 Save your work (30 seconds — do not skip)</h3>
+<pre><code class="language-bash">cd ~/hello-cncf
+git add app.py requirements.txt Dockerfile
+git commit -m &quot;Lab 1: hello-cncf microservice + Dockerfile&quot;
+git push origin main
+</code></pre>
+<p>Expected: the output ends with <code>main -&gt; main</code>. Refresh your repo on github.com — the three files are there. <strong>Your code now survives any session timeout</strong> (your image is already safe on Docker Hub).</p>
+<h3>🅱️ Plan B — create files with an editor instead</h3>
+<p>If pasting blocks at the prompt keeps going wrong: <code>nano app.py</code>, paste <strong>only the file contents</strong> (everything <em>between</em> the <code>cat</code> line and the <code>EOF</code> line — never those two lines), then <strong>Ctrl+O, Enter, Ctrl+X</strong>. Same for <code>Dockerfile</code>. Re-run the ✔ Verify checks afterwards.</p>
+<h3>✅ Checkpoint 1</h3>
+<p>You can explain: image vs container, layers, isolation, the registry hand-off, and opening the app as a web portal. Clean up the test containers: <code>docker rm -f svc1 svc2</code></p>
+<hr />
+<h2>Lab 2: Host &amp; Manage It on Kubernetes (28 minutes)</h2>
+<p><em>Same terminal, same session. Objective: replicate the app across 2 nodes and watch Kubernetes load-balance, probe, heal, and scale it.</em></p>
+<h3>Steps</h3>
+<ol>
+<li><strong>Declare the Deployment</strong> — 3 replicas, health-probed:</li>
+</ol>
+<pre><code class="language-bash">cd ~/hello-cncf &amp;&amp; cat &gt; app.yaml &lt;&lt; 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-cncf
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: hello-cncf }
+  template:
+    metadata:
+      labels: { app: hello-cncf }
+    spec:
+      containers:
+      - name: web
+        image: &lt;DOCKERUSER&gt;/hello-cncf:1.0
+        ports: [{ containerPort: 8080 }]
+        readinessProbe:
+          httpGet: { path: /healthz, port: 8080 }
+          initialDelaySeconds: 2
+          periodSeconds: 5
+EOF
+sed -i &quot;s/&lt;DOCKERUSER&gt;/YOUR_ACTUAL_USERNAME/&quot; app.yaml    # &lt;-- edit!
+kubectl apply -f app.yaml
+</code></pre>
+<p><strong>✔ Verify first:</strong> <code>head -2 app.yaml</code> must show <code>apiVersion: apps/v1</code> — not a <code>cat &gt;</code> line. <strong>🔧 If wrong:</strong> <code>rm app.yaml</code>, re-paste at the <code>$</code> prompt.</p>
+<p>Expected: <code>deployment.apps/hello-cncf created</code></p>
+<blockquote>
+<p><strong>Foolproof fallback:</strong> if your Lab 1 push failed, substitute image <code>stefanprodan/podinfo</code> with ports/probe on <code>9898</code> — every step below works identically.</p>
+</blockquote>
+<ol start="2">
+<li><strong>Pods spread across nodes automatically:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl get pods -o wide
+</code></pre>
+<p>Expected: 3 pods <code>1/1 Running</code>, placed across <code>controlplane</code> and <code>node01</code>.</p>
+<ol start="3">
+<li><strong>Service = built-in load balancer:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl expose deployment hello-cncf --port=80 --target-port=8080 --type=NodePort
+PORT=$(kubectl get svc hello-cncf -o jsonpath='{.spec.ports[0].nodePort}')
+echo &quot;Service on port $PORT&quot;
+curl -s localhost:$PORT/api
+</code></pre>
+<p><strong>🌐 Open the web portal on Kubernetes:</strong> in your laptop browser open <strong>http://localhost:$PORT</strong><br />
+   (paste the number <code>echo</code> printed). Refresh a few times — <strong>served_by</strong> should change as the Service load-balances across pods.</p>
+<ol start="4">
+<li><strong>⭐ SEE load balancing</strong> — what <code>served_by</code> was built for:</li>
+</ol>
+<pre><code class="language-bash">for i in $(seq 1 8); do curl -s localhost:$PORT/api | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'; done
+</code></pre>
+<p>Expected: the hostname <strong>changes between requests</strong>, cycling across all 3 pods. One address, distributed traffic — that's a Service.</p>
+<ol start="5">
+<li><strong>⭐ SEE self-healing</strong> — kill a pod on purpose:</li>
+</ol>
+<pre><code class="language-bash">kubectl get pods                       # note a pod name
+kubectl delete pod &lt;paste-a-pod-name&gt;
+kubectl get pods
+</code></pre>
+<p>Expected: deleted pod <code>Terminating</code>, replacement already <code>ContainerCreating</code>. Re-run the curl loop — traffic never stopped (readiness probes steered around the dying pod).</p>
+<ol start="6">
+<li><strong>Scale declaratively:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl scale deployment hello-cncf --replicas=5
+for i in $(seq 1 8); do curl -s localhost:$PORT/api | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'; done
+kubectl scale deployment hello-cncf --replicas=3
+</code></pre>
+<p>Expected: the loop cycles across <strong>five</strong> hostnames, then back to three.</p>
+<ol start="7">
+<li><strong>The declaration Kubernetes defends:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl get deployment hello-cncf -o yaml | grep &quot; replicas:&quot;
+</code></pre>
+<p>Expected: <code>replicas: 3</code> — the thermostat setting.</p>
+<blockquote>
+<p><strong>Fast rebuild box</strong> (if your session ever expires): Lab 0 → Lab 2 steps 1 &amp; 3 → you're back in ~3 minutes; your image is safe on Docker Hub.</p>
+</blockquote>
+<h3>✅ Checkpoint 2</h3>
+<p>You can explain — with evidence you produced — Deployments, Services &amp; load balancing, readiness probes, self-healing, and declarative scaling.</p>
+<h3>💾 Save your work</h3>
+<pre><code class="language-bash">cd ~/hello-cncf
+git add app.yaml
+git commit -m &quot;Lab 2: Kubernetes Deployment manifest with readiness probe&quot;
+git push origin main
+</code></pre>
+<p>Expected: ends with <code>main -&gt; main</code>. Now your cluster manifest is recoverable too — the 🔄 Session expired? box re-applies it automatically.</p>
+<p><strong>Keep this session open — Lab 3 continues right here.</strong> (If it expires, use the 🔄 recovery box: ~2 minutes.)</p>
+<hr />
+<h2>Lab 3: CI/CD End to End — Commit to Cluster (30 minutes)</h2>
+<p><em>GitHub in one browser tab, your Killercoda terminal in another. Objective: a code change travels commit → pipeline → registry → rolling update → visible to users.</em></p>
+<h3>One-time setup (2 min — your repo already exists from Lab 0)</h3>
+<ol>
+<li>Your <code>hello-cncf</code> repo on GitHub already holds <code>app.py</code>, <code>Dockerfile</code>, and <code>app.yaml</code> — everything you pushed during Labs 1–2. <strong>The pipeline will build from exactly that repo.</strong></li>
+<li>Repo <strong>Settings → Secrets and variables → Actions → New repository secret</strong> — add both:<br />
+   - <code>DOCKERHUB_USERNAME</code> = your Docker Hub username<br />
+   - <code>DOCKERHUB_TOKEN</code> = the access token from your prerequisites sheet</li>
+</ol>
+<h3>Steps</h3>
+<ol>
+<li><strong>Bump the app to v2.0 — editing the files you already pushed.</strong> On github.com, open <code>app.py</code> → pencil ✏️ → change two things: <code>VERSION = os.getenv("APP_VERSION", "2.0")</code> and inside <code>payload()</code> set <code>message="Now delivered by a pipeline!"</code> → <strong>Commit to main</strong>. Then open <code>Dockerfile</code> → pencil ✏️ → change <code>ENV APP_VERSION=1.0</code> to <code>ENV APP_VERSION=2.0</code> → <strong>Commit to main</strong>.</li>
+</ol>
+<p><em>(Prefer the terminal? <code>cd ~/hello-cncf</code>, edit with <code>nano</code>, then <code>git add -A &amp;&amp; git commit -m "v2.0" &amp;&amp; git push origin main</code> — same result. Just remember to <code>git pull</code> in the terminal afterwards if you also edit on the web.)</em></p>
+<ol start="2">
+<li><strong>Add the quality gate</strong> — <code>test_app.py</code>:</li>
+</ol>
+<pre><code class="language-python">from app import app
+
+def test_root():
+    r = app.test_client().get(&quot;/api&quot;)
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data[&quot;service&quot;] == &quot;hello-cncf&quot;
+    assert data[&quot;version&quot;] == &quot;2.0&quot;
+
+def test_healthz():
+    assert app.test_client().get(&quot;/healthz&quot;).status_code == 200
+</code></pre>
+<p>Commit.</p>
+<ol start="3">
+<li><strong>Declare the pipeline</strong> — <code>.github/workflows/cicd.yml</code> (type the full path; folders auto-create):</li>
+</ol>
+<pre><code class="language-yaml">name: CICD
+on: [push]
+
+jobs:
+  test-build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: &quot;3.12&quot;
+
+      - name: Run tests
+        run: |
+          pip install flask==3.0.3 pytest
+          pytest -v
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push v2.0
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-cncf:2.0 .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-cncf:2.0
+</code></pre>
+<p>Commit — <strong>this commit triggers the pipeline.</strong></p>
+<ol start="4">
+<li><strong>Watch it go green.</strong> <strong>Actions</strong> tab → all steps ✓. Docker Hub now shows tag <code>2.0</code> beside <code>1.0</code> — the pipeline just did automatically everything you did by hand in Lab 1.</li>
+</ol>
+<p><strong>💾 Your work is already saved</strong> — the pipeline runs <em>from</em> your repo, so the code is on GitHub by definition. If your Killercoda session expired while the pipeline ran, use the 🔄 recovery box (Lab 0), then continue below.</p>
+<ol start="5">
+<li><strong>⭐ Roll it out</strong> — back in your Killercoda tab:</li>
+</ol>
+<pre><code class="language-bash">kubectl set image deployment/hello-cncf web=&lt;DOCKERUSER&gt;/hello-cncf:2.0
+kubectl rollout status deployment/hello-cncf
+</code></pre>
+<p>Expected: <code>deployment "hello-cncf" successfully rolled out</code> — pods replaced one by one, zero downtime, gated by your readiness probe.</p>
+<ol start="6">
+<li><strong>⭐ Prove it to users:</strong></li>
+</ol>
+<pre><code class="language-bash">for i in $(seq 1 6); do curl -s localhost:$PORT/api | grep -oE '&quot;(version|served_by)&quot;:&quot;[^&quot;]*&quot;' | paste -d' ' - -; done
+</code></pre>
+<p>Expected: every answer <code>"version":"2.0"</code>, still load-balanced across fresh pods.</p>
+<p><strong>🌐 Portal check:</strong> refresh <strong>http://localhost:$PORT</strong> — the page should now show <strong>version 2.0</strong> and the new message.</p>
+<ol start="7">
+<li><strong>Instant rollback:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl rollout undo deployment/hello-cncf
+curl -s localhost:$PORT/api | grep -o '&quot;version&quot;:&quot;[^&quot;]*&quot;'
+</code></pre>
+<p>Expected: <code>"version":"1.0"</code>. Change is cheap in both directions.</p>
+<ol start="8">
+<li><strong>Correlate out loud:</strong> commit (GitHub) → tested &amp; built (Actions) → immutable versioned image (Docker Hub) → declarative rolling update (Kubernetes) → user-visible change (<code>version</code>) → one-command rollback. <strong>One app, one environment, the entire loop — and you operated every stage.</strong></li>
+</ol>
+<h3>💾 Final save — sync the terminal copy</h3>
+<p>Your repo already has everything (the pipeline built from it). Pull the web-edited changes back into the VM so both copies match:</p>
+<pre><code class="language-bash">cd ~/hello-cncf &amp;&amp; git pull origin main &amp;&amp; ls
+</code></pre>
+<p>Expected: <code>app.py  app.yaml  Dockerfile  requirements.txt  test_app.py  README.md</code> — your complete workshop artifact, permanently on GitHub. <strong>Everything you built today is reproducible from this repo: clone it anywhere, apply <code>app.yaml</code>, and the app runs.</strong></p>
+<h3>✅ Checkpoint 3</h3>
+<p>You can trace one change through every stage of the delivery loop and name the guarantee each stage provides.</p>
+<hr />
+<h2>Troubleshooting (foolproof table)</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git push</code>: <code>Invalid username or password</code></td>
+<td>GitHub token wrong, expired, or missing <code>repo</code> scope</td>
+<td>Regenerate a classic token with <strong>repo</strong> scope, re-run the Lab 0 <code>git remote set-url</code> line</td>
+</tr>
+<tr>
+<td><code>git push</code>: <code>rejected — non-fast-forward</code></td>
+<td>You edited files on github.com AND in the terminal</td>
+<td><code>git pull --rebase origin main</code>, then push again</td>
+</tr>
+<tr>
+<td>Lost everything — session expired</td>
+<td>Killercoda 60-min cap</td>
+<td>Use the <strong>🔄 Session expired?</strong> box in Lab 0 — clone + apply, back in ~2 minutes; nothing is rebuilt</td>
+</tr>
+<tr>
+<td><code>git clone</code> asks for a password</td>
+<td>Cloned the plain HTTPS URL</td>
+<td>Clone with the token URL from the recovery box, or re-run <code>git remote set-url</code></td>
+</tr>
+<tr>
+<td>A file contains a <code>cat &gt; ...</code> or <code>EOF</code> line</td>
+<td>Block pasted inside an editor, or the closing EOF was indented</td>
+<td><code>rm &lt;file&gt;</code>, re-paste the whole block at the <code>$</code> prompt (see the ⚠️ callout in Lab 1) — or Plan B with nano</td>
+</tr>
+<tr>
+<td>Lab 0: <code>docker: command not found</code> after install line</td>
+<td>apt lock still held on fresh VM</td>
+<td>Wait 20 s, re-run the Lab 0 docker line</td>
+</tr>
+<tr>
+<td><code>denied: requested access to the resource is denied</code> on push</td>
+<td>Tag missing your username, or not logged in</td>
+<td><code>docker login</code>, re-tag <code>&lt;DOCKERUSER&gt;/hello-cncf:1.0</code>, push again</td>
+</tr>
+<tr>
+<td>Pods <code>ImagePullBackOff</code></td>
+<td>Username typo in app.yaml, or push skipped</td>
+<td><code>kubectl describe pod &lt;name&gt;</code> shows the pull error; fix the image ref, or use fallback <code>stefanprodan/podinfo</code> (port 9898)</td>
+</tr>
+<tr>
+<td>Pods <code>Pending</code></td>
+<td>Over-scaled the small cluster</td>
+<td><code>kubectl scale deployment hello-cncf --replicas=3</code></td>
+</tr>
+<tr>
+<td>curl loop shows one hostname only</td>
+<td>Other pods not Ready yet</td>
+<td><code>kubectl get pods</code> — wait for all <code>1/1</code>, retry</td>
+</tr>
+<tr>
+<td>Browser shows raw JSON instead of portal</td>
+<td>You opened <code>/api</code></td>
+<td>Open <code>/</code> (no path) for the portal; <code>/api</code> is for curl</td>
+</tr>
+<tr>
+<td>Portal page won't load</td>
+<td>Wrong port or Service not ready</td>
+<td><code>echo $PORT</code> and open <code>http://localhost:$PORT</code>; confirm <code>kubectl get svc,pods</code></td>
+</tr>
+<tr>
+<td>Portal still shows version 1.0 after Lab 3</td>
+<td>Browser cache or old pods</td>
+<td>Hard-refresh; confirm rollout finished; check <code>curl -s localhost:$PORT/api</code></td>
+</tr>
+<tr>
+<td>Killercoda session expired</td>
+<td>60-min cap</td>
+<td>New playground → Lab 0 → Fast-rebuild box (~3 min); image is safe on Docker Hub</td>
+</tr>
+<tr>
+<td>Actions: <code>Username and password required</code></td>
+<td>Secrets missing/misnamed</td>
+<td>Exactly <code>DOCKERHUB_USERNAME</code> / <code>DOCKERHUB_TOKEN</code> under Settings → Secrets → Actions</td>
+</tr>
+<tr>
+<td>Actions: <code>insufficient_scope</code> on push</td>
+<td>Token is read-only</td>
+<td>New token with <strong>Read &amp; Write</strong></td>
+</tr>
+<tr>
+<td>Tests fail <code>ModuleNotFoundError: flask</code></td>
+<td>pip line missed</td>
+<td><code>Run tests</code> step must <code>pip install flask==3.0.3 pytest</code></td>
+</tr>
+<tr>
+<td><code>kubectl set image</code>: container not found</td>
+<td>Name mismatch</td>
+<td>It's <code>web=</code> (container name from app.yaml)</td>
+</tr>
+<tr>
+<td>Rollout stuck</td>
+<td>v2.0 failing readiness</td>
+<td><code>kubectl describe pod &lt;new-pod&gt;</code>; <code>kubectl rollout undo</code> recovers instantly</td>
+</tr>
+</tbody>
+</table>
+<h2>Facilitator &amp; reuse notes</h2>
+<ul>
+<li>Recordings in <code>videos/</code> (<code>lab1/2/3-*.mp4</code>) — and the same files at repo root — mirror this guide step-for-step, including <strong>opening the web portal in the browser</strong>. Play a lab's video first, then release participants to reproduce it, or share videos for self-paced follow-along.</li>
+<li><strong>Codespaces twin package:</strong> <code>../codespaces/</code> (guides + Codespaces walkthrough videos with Ports / port-forward portal steps).</li>
+<li>The <code>served_by</code> + <code>version</code> + <code>/healthz</code> trio (portal at <code>/</code>, JSON at <code>/api</code>) is the reusable teaching pattern — steal it for any demo app.</li>
+<li>Assessment: fork the repo; grade = green pipeline + own Docker Hub tags 1.0 &amp; 2.0 + screenshot of the curl <code>/api</code> loop cycling ≥3 hostnames on v2.0 <strong>and</strong> the portal showing version 2.0.</li>
+</ul>
+</body></html>
