@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Lab Guide</title><style>code{white-space:pre-wrap}</style><style>body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 40px 24px; color: #1E293B; line-height: 1.65; background: #FFFFFF; }
+h1 { color: #1E3A5F; font-family: Cambria, Georgia, serif; border-bottom: 3px solid #2196F3; padding-bottom: 10px; }
+h2 { color: #1E3A5F; font-family: Cambria, Georgia, serif; margin-top: 2em; }
+h3 { color: #2196F3; margin-top: 1.5em; }
+code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+pre { background: #0F172A; color: #E2E8F0; padding: 16px 20px; border-radius: 10px; overflow-x: auto; }
+pre code { background: none; color: inherit; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
+th { background: #1E3A5F; color: #fff; text-align: left; }
+th, td { border: 1px solid #CBD5E1; padding: 9px 13px; font-size: 0.95em; }
+tr:nth-child(even) { background: #F8FAFC; }
+blockquote { border-left: 4px solid #2196F3; background: #E3F2FD; margin: 1em 0; padding: 10px 18px; border-radius: 0 8px 8px 0; }
+a { color: #1E88E5; }
+li { margin: 4px 0; }
+input[type=checkbox] { transform: scale(1.15); margin-right: 8px; }
+hr { border: none; border-top: 1px solid #CBD5E1; margin: 2em 0; }</style></head><body>
+<h1>Lab Guide: Cloud Native Workshop — One App, One Environment, End to End (GitHub Codespaces Edition)</h1>
+<p><strong>The session:</strong> you will build ONE microservice and take it through the entire cloud native journey — containerize it, run it replicated on a real 2-node Kubernetes cluster, and deliver an update through a CI/CD pipeline into that same running cluster.</p>
+<p><strong>The environment:</strong> the whole hands-on session lives in <strong>one GitHub Codespace</strong> — a full Linux dev machine with VS Code, a terminal, and Docker preinstalled, running in your browser. In Lab 0 you add a real 2-node Kubernetes cluster to it with <strong>kind</strong> (Kubernetes-in-Docker). Because the codespace is created <em>from your own GitHub repo</em>, your code is already cloned and <code>git push</code> just works — no tokens to paste. <strong>You install nothing on your computer.</strong></p>
+<p><strong>Duration:</strong> 70–80 minutes · <strong>Cost:</strong> $0 (well inside the free 120 core-hours/month every GitHub account includes)</p>
+<blockquote>
+<p><strong>Choose your lab environment</strong> (same Labs 1 → 2 → 3 either way):
+- <strong>This guide = GitHub Codespaces</strong> — prep sheet: <code>prerequisites.md</code> (or <code>environments/codespaces/</code>)
+- <strong>Killercoda option</strong> — use <code>../killercoda/lab-guide.md</code> + <code>../killercoda/prerequisites.md</code> (or <code>../killercoda/</code>)</p>
+<p>Complete the matching prerequisites before the session. Same app, same checkpoints; only Lab 0 and how you reach the Service differ.</p>
+</blockquote>
+<h2>The application: <code>hello-cncf</code></h2>
+<p>One tiny Python microservice, engineered so the platform's invisible behavior becomes visible:</p>
+<table>
+<thead>
+<tr>
+<th>Design choice</th>
+<th>What it makes visible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>served_by: &lt;hostname&gt;</code> in every response</td>
+<td><strong>Load balancing</strong> — repeated requests show different pod names</td>
+</tr>
+<tr>
+<td><code>version</code> in every response</td>
+<td><strong>Rolling updates</strong> — watch v1.0 become v2.0 live</td>
+</tr>
+<tr>
+<td><code>/healthz</code> endpoint</td>
+<td><strong>Probes &amp; self-healing</strong> — Kubernetes' hook into the app</td>
+</tr>
+<tr>
+<td>Stateless, env-configured</td>
+<td><strong>Scalability</strong> — any replica serves any request</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Lab 0: Boot Your Environment (8 minutes — do once, keep it open all session)</h2>
+<ol>
+<li><strong>Create your GitHub repo — this is where your work lives AND where your lab machine boots from.</strong></li>
+</ol>
+<p>On <strong>github.com</strong>: <strong>+ → New repository</strong> → name it <code>hello-cncf</code> → <strong>Public</strong> → check <strong>Add a README</strong> → <strong>Create repository</strong>. (Lab 3's pipeline will run from this same repo.)</p>
+<ol start="2">
+<li><strong>Launch the codespace.</strong> On your new repo's page: green <strong>Code</strong> button → <strong>Codespaces</strong> tab → <strong>Create codespace on main</strong>. In ~1 minute VS Code opens in your browser with a terminal at the bottom (if you don't see it: menu ☰ → <strong>Terminal → New Terminal</strong>). The default 2-core machine is plenty.</li>
+</ol>
+<p>Your repo is <strong>already cloned and you're already inside it</strong> — the prompt sits in <code>/workspaces/hello-cncf</code>. Git identity and push credentials are wired automatically by Codespaces. Verify both:</p>
+<pre><code class="language-bash">pwd &amp;&amp; git remote -v
+</code></pre>
+<p>Expected: <code>/workspaces/hello-cncf</code> and an <code>origin</code> pointing at your repo.</p>
+<ol start="3">
+<li><strong>Docker is preinstalled</strong> — verify:</li>
+</ol>
+<pre><code class="language-bash">docker version --format 'Docker {{.Server.Version}} ready'
+</code></pre>
+<p>Expected: <code>Docker 2x.x.x ready</code></p>
+<ol start="4">
+<li><strong>Install the two Kubernetes tools</strong> into the codespace (never onto your machine) — <code>kubectl</code> (the CLI) and <code>kind</code> (runs cluster nodes as Docker containers):</li>
+</ol>
+<pre><code class="language-bash">which kubectl || (curl -sLo /tmp/kubectl &quot;https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl&quot; &amp;&amp; sudo install /tmp/kubectl /usr/local/bin/kubectl)
+which kind || (curl -sLo /tmp/kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 &amp;&amp; sudo install /tmp/kind /usr/local/bin/kind)
+kubectl version --client | head -1 &amp;&amp; kind version
+</code></pre>
+<p>Expected: a kubectl client version and a <code>kind v0.x.x</code> line.</p>
+<ol start="5">
+<li><strong>Create your 2-node cluster</strong> (~1–2 minutes — one control-plane, one worker, exactly like the Killercoda playground):</li>
+</ol>
+<pre><code class="language-bash">cat &gt; kind-config.yaml &lt;&lt; 'EOF'
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: worker
+EOF
+kind create cluster --name cncf --config kind-config.yaml
+kubectl taint nodes cncf-control-plane node-role.kubernetes.io/control-plane- 2&gt;/dev/null || true
+kubectl get nodes
+</code></pre>
+<p>Expected:</p>
+<pre><code>NAME                 STATUS   ROLES           AGE   VERSION
+cncf-control-plane   Ready    control-plane   ...   v1.3x.x
+cncf-worker          Ready    &lt;none&gt;          ...   v1.3x.x
+</code></pre>
+<p><em>(The <code>taint</code> line lets app pods schedule on both nodes — same behavior as the Killercoda playground, and it's what makes the "pods spread across nodes" moment in Lab 2 visible.)</em></p>
+<blockquote>
+<h3>💾 THE GOLDEN RULE OF THIS WORKSHOP</h3>
+<p><strong>Do all your work inside <code>/workspaces/hello-cncf</code>, and push after every lab.</strong>
+Unlike Killercoda, your codespace <strong>does not expire in 60 minutes</strong> — it auto-stops after ~30 idle minutes but keeps every file. Pushing is still your safety net (and Lab 3's pipeline builds from the repo), so a <strong>💾 Save your work</strong> box ends each lab anyway.</p>
+<h3>🔄 CODESPACE STOPPED OR CLUSTER GONE? Recover in 3 minutes (bookmark this box)</h3>
+<p>Reopen the codespace from https://github.com/codespaces (or the repo's <strong>Code → Codespaces</strong> tab). <strong>All your files are still there</strong> — nothing to re-clone. The kind cluster, however, may not survive a stop/restart (its node containers get new IPs). If <code>kubectl get nodes</code> errors or nodes are <code>NotReady</code>, rebuild it:</p>
+<p><code>bash
+cd /workspaces/hello-cncf
+kind delete cluster --name cncf
+kind create cluster --name cncf --config kind-config.yaml
+kubectl taint nodes cncf-control-plane node-role.kubernetes.io/control-plane- 2&gt;/dev/null || true
+kubectl apply -f app.yaml 2&gt;/dev/null || echo "(no app.yaml yet — you were still in Lab 1)"
+kubectl get pods</code></p>
+<p>If you'd reached Lab 2, your app is already redeploying — Kubernetes pulls the image straight from Docker Hub, so <strong>nothing is rebuilt</strong>. Need the Service again? Re-run Lab 2 step 3 (<code>kubectl expose ...</code> + capture <code>$URL</code>).</p>
+<h3>🖥️ NEW TERMINAL? Restore your variables (you'll need this in Labs 2–3)</h3>
+<p>Shell variables like <code>$URL</code> live per-terminal. In any new terminal tab, paste:</p>
+<p><code>bash
+cd /workspaces/hello-cncf
+PORT=$(kubectl get svc hello-cncf -o jsonpath='{.spec.ports[0].nodePort}' 2&gt;/dev/null)
+NODE_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' cncf-control-plane)
+URL="$NODE_IP:$PORT"; echo "App URL: $URL"</code></p>
+</blockquote>
+<hr />
+<h2>Lab 1: Build &amp; Ship the Microservice (20 minutes)</h2>
+<p><em>Same terminal. Objective: understand the app, containerize it, prove isolation, push to the registry.</em></p>
+<h3>Steps</h3>
+<blockquote>
+<h3>⚠️ READ THIS ONCE — two ways to create files, both fine</h3>
+<ul>
+<li><strong>Paste-at-prompt:</strong> blocks starting <code>cat &gt; somefile &lt;&lt; 'EOF'</code> and ending with a line containing only <code>EOF</code> are <strong>shell commands</strong> — paste the <strong>whole block</strong> at the terminal <strong><code>$</code> prompt</strong> and press Enter. The first and last lines create the file and <strong>must never appear inside it</strong>.</li>
+<li><strong>VS Code editor (you have a real one here!):</strong> right-click the Explorer sidebar → <strong>New File</strong> → type the name → paste <strong>only the contents between</strong> the <code>cat</code> line and the <code>EOF</code> line → <strong>Ctrl+S / Cmd+S</strong>.</li>
+<li>Either way, every file step is followed by a <strong>✔ Verify</strong> check that catches mistakes instantly, with a one-line fix.</li>
+</ul>
+</blockquote>
+<ol>
+<li><strong>Create the application</strong> — you're already inside <code>hello-cncf</code> from Lab 0. Paste the whole block at the <code>$</code> prompt (or use the editor):</li>
+</ol>
+<pre><code class="language-bash">cd /workspaces/hello-cncf
+cat &gt; app.py &lt;&lt; 'EOF'
+import os, socket
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+VERSION = os.getenv(&quot;APP_VERSION&quot;, &quot;1.0&quot;)
+
+@app.get(&quot;/&quot;)
+def hello():
+    return jsonify(
+        service=&quot;hello-cncf&quot;,
+        version=VERSION,
+        served_by=socket.gethostname(),
+        message=&quot;Hello from Cloud Native!&quot;
+    )
+
+@app.get(&quot;/healthz&quot;)
+def healthz():
+    return &quot;ok&quot;, 200
+
+if __name__ == &quot;__main__&quot;:
+    app.run(host=&quot;0.0.0.0&quot;, port=8080)
+EOF
+ls
+</code></pre>
+<p>Expected: <code>app.py</code> (plus <code>README.md</code> and <code>kind-config.yaml</code>)</p>
+<p><strong>✔ Verify</strong> (catches the classic paste mistake in 2 seconds):</p>
+<pre><code class="language-bash">head -1 app.py &amp;&amp; grep -c &quot;cat &gt; \|^EOF&quot; app.py
+</code></pre>
+<p>Expected: <code>import os, socket</code> then <code>0</code>. <strong>🔧 If wrong</strong> (you see <code>cat &gt; app.py</code> or a count above 0): <code>rm app.py</code>, re-paste the block at the <code>$</code> prompt — or create it in the editor.</p>
+<ol start="2">
+<li><strong>Dependencies + Dockerfile</strong> — the build recipe:</li>
+</ol>
+<pre><code class="language-bash">echo &quot;flask==3.0.3&quot; &gt; requirements.txt
+cat &gt; Dockerfile &lt;&lt; 'EOF'
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+ENV APP_VERSION=1.0
+EXPOSE 8080
+CMD [&quot;python&quot;, &quot;app.py&quot;]
+EOF
+</code></pre>
+<p><strong>✔ Verify:</strong></p>
+<pre><code class="language-bash">head -1 Dockerfile &amp;&amp; grep -c &quot;^EOF&quot; Dockerfile
+</code></pre>
+<p>Expected: <code>FROM python:3.12-slim</code> then <code>0</code>. <strong>🔧 If wrong:</strong> <code>rm Dockerfile</code>, re-paste at the <code>$</code> prompt.</p>
+<ol start="3">
+<li><strong>Build the image:</strong></li>
+</ol>
+<pre><code class="language-bash">docker build -t hello-cncf:1.0 .
+</code></pre>
+<p>Expected (last line): <code>Successfully tagged hello-cncf:1.0</code> (or <code>naming to docker.io/library/hello-cncf:1.0</code> with BuildKit)</p>
+<ol start="4">
+<li><strong>Run &amp; test it:</strong></li>
+</ol>
+<pre><code class="language-bash">docker run -d -p 8080:8080 --name svc1 hello-cncf:1.0
+curl -s localhost:8080
+curl -s localhost:8080/healthz
+</code></pre>
+<p>Expected: a JSON response with <code>"version":"1.0"</code> and a <code>"served_by"</code> hostname, then <code>ok</code>. <strong>Remember <code>served_by</code></strong> — it becomes the star of Lab 2. <em>(Codespaces may pop a "port 8080 forwarded" toast — that's it offering the port to your browser; harmless, ignore or explore.)</em></p>
+<ol start="5">
+<li><strong>Prove isolation</strong> — second copy, same host, zero conflict:</li>
+</ol>
+<pre><code class="language-bash">docker run -d -p 8081:8080 --name svc2 hello-cncf:1.0
+curl -s localhost:8080 | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'
+curl -s localhost:8081 | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'
+</code></pre>
+<p>Expected: <strong>two different hostnames</strong>.</p>
+<ol start="6">
+<li><strong>Ship it to the registry</strong> (the bridge to Labs 2 and 3):</li>
+</ol>
+<pre><code class="language-bash">docker login          # Docker Hub username + the access token from your prerequisites sheet
+docker tag hello-cncf:1.0 &lt;DOCKERUSER&gt;/hello-cncf:1.0
+docker push &lt;DOCKERUSER&gt;/hello-cncf:1.0
+</code></pre>
+<p>Expected: ends with a <code>sha256:</code> digest. Browser-verify: <code>hub.docker.com/r/&lt;DOCKERUSER&gt;/hello-cncf</code> shows tag <code>1.0</code>.</p>
+<h3>💾 Save your work (30 seconds — do not skip)</h3>
+<pre><code class="language-bash">cd /workspaces/hello-cncf
+git add app.py requirements.txt Dockerfile kind-config.yaml
+git commit -m &quot;Lab 1: hello-cncf microservice + Dockerfile&quot;
+git push origin main
+</code></pre>
+<p>Expected: the output ends with <code>main -&gt; main</code> — no password prompt, Codespaces authenticated you automatically. Refresh your repo on github.com — the files are there. <strong>Your code now survives anything</strong> (your image is already safe on Docker Hub).</p>
+<h3>✅ Checkpoint 1</h3>
+<p>You can explain: image vs container, layers, isolation, and why the registry is the universal hand-off point. Clean up the test containers: <code>docker rm -f svc1 svc2</code></p>
+<hr />
+<h2>Lab 2: Host &amp; Manage It on Kubernetes (28 minutes)</h2>
+<p><em>Same terminal, same codespace. Objective: replicate the app across 2 nodes and watch Kubernetes load-balance, probe, heal, and scale it.</em></p>
+<h3>Steps</h3>
+<ol>
+<li><strong>Declare the Deployment</strong> — 3 replicas, health-probed:</li>
+</ol>
+<pre><code class="language-bash">cd /workspaces/hello-cncf &amp;&amp; cat &gt; app.yaml &lt;&lt; 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-cncf
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: hello-cncf }
+  template:
+    metadata:
+      labels: { app: hello-cncf }
+    spec:
+      containers:
+      - name: web
+        image: &lt;DOCKERUSER&gt;/hello-cncf:1.0
+        ports: [{ containerPort: 8080 }]
+        readinessProbe:
+          httpGet: { path: /healthz, port: 8080 }
+          initialDelaySeconds: 2
+          periodSeconds: 5
+EOF
+sed -i &quot;s/&lt;DOCKERUSER&gt;/YOUR_ACTUAL_USERNAME/&quot; app.yaml    # &lt;-- edit!
+kubectl apply -f app.yaml
+</code></pre>
+<p><strong>✔ Verify first:</strong> <code>head -2 app.yaml</code> must show <code>apiVersion: apps/v1</code> — not a <code>cat &gt;</code> line. <strong>🔧 If wrong:</strong> <code>rm app.yaml</code>, re-paste at the <code>$</code> prompt.</p>
+<p>Expected: <code>deployment.apps/hello-cncf created</code></p>
+<blockquote>
+<p><strong>Foolproof fallback:</strong> if your Lab 1 push failed, substitute image <code>stefanprodan/podinfo</code> with ports/probe on <code>9898</code> — every step below works identically.</p>
+</blockquote>
+<ol start="2">
+<li><strong>Pods spread across nodes automatically:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl get pods -o wide
+</code></pre>
+<p>Expected: 3 pods <code>1/1 Running</code>, placed across <code>cncf-control-plane</code> and <code>cncf-worker</code>. <em>(All on one node? You skipped the <code>taint</code> line in Lab 0 step 5 — run it now and <code>kubectl rollout restart deployment hello-cncf</code>.)</em></p>
+<ol start="3">
+<li><strong>Service = built-in load balancer.</strong> One Codespaces-specific wrinkle: your cluster's nodes are Docker containers, so the NodePort lives on the <strong>node's container IP</strong>, not on <code>localhost</code>. Capture both into one <code>$URL</code>:</li>
+</ol>
+<pre><code class="language-bash">kubectl expose deployment hello-cncf --port=80 --target-port=8080 --type=NodePort
+PORT=$(kubectl get svc hello-cncf -o jsonpath='{.spec.ports[0].nodePort}')
+NODE_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' cncf-control-plane)
+URL=&quot;$NODE_IP:$PORT&quot;
+echo &quot;Service reachable at $URL&quot;
+curl -s $URL
+</code></pre>
+<p>Expected: the JSON response, served from inside the cluster. <em>(Open a new terminal later? The 🖥️ box in Lab 0 restores <code>$URL</code>.)</em></p>
+<ol start="4">
+<li><strong>⭐ SEE load balancing</strong> — what <code>served_by</code> was built for:</li>
+</ol>
+<pre><code class="language-bash">for i in $(seq 1 8); do curl -s $URL | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'; done
+</code></pre>
+<p>Expected: the hostname <strong>changes between requests</strong>, cycling across all 3 pods. One address, distributed traffic — that's a Service.</p>
+<ol start="5">
+<li><strong>⭐ SEE self-healing</strong> — kill a pod on purpose:</li>
+</ol>
+<pre><code class="language-bash">kubectl get pods                       # note a pod name
+kubectl delete pod &lt;paste-a-pod-name&gt;
+kubectl get pods
+</code></pre>
+<p>Expected: deleted pod <code>Terminating</code>, replacement already <code>ContainerCreating</code>. Re-run the curl loop — traffic never stopped (readiness probes steered around the dying pod).</p>
+<ol start="6">
+<li><strong>Scale declaratively:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl scale deployment hello-cncf --replicas=5
+for i in $(seq 1 8); do curl -s $URL | grep -o '&quot;served_by&quot;:&quot;[^&quot;]*&quot;'; done
+kubectl scale deployment hello-cncf --replicas=3
+</code></pre>
+<p>Expected: the loop cycles across <strong>five</strong> hostnames, then back to three.</p>
+<ol start="7">
+<li><strong>The declaration Kubernetes defends:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl get deployment hello-cncf -o yaml | grep &quot; replicas:&quot;
+</code></pre>
+<p>Expected: <code>replicas: 3</code> — the thermostat setting.</p>
+<blockquote>
+<p><strong>Fast rebuild box</strong> (if the cluster ever breaks): the 🔄 box in Lab 0 rebuilds cluster + app in ~3 minutes; your image is safe on Docker Hub and your files never left the codespace.</p>
+</blockquote>
+<h3>✅ Checkpoint 2</h3>
+<p>You can explain — with evidence you produced — Deployments, Services &amp; load balancing, readiness probes, self-healing, and declarative scaling.</p>
+<h3>💾 Save your work</h3>
+<pre><code class="language-bash">cd /workspaces/hello-cncf
+git add app.yaml
+git commit -m &quot;Lab 2: Kubernetes Deployment manifest with readiness probe&quot;
+git push origin main
+</code></pre>
+<p>Expected: ends with <code>main -&gt; main</code>. Now your cluster manifest is recoverable anywhere — the 🔄 box re-applies it automatically.</p>
+<p><strong>Keep this codespace open — Lab 3 continues right here.</strong></p>
+<hr />
+<h2>Lab 3: CI/CD End to End — Commit to Cluster (30 minutes)</h2>
+<p><em>Everything in one place this time: you edit, commit, and push from the codespace, GitHub Actions builds in the cloud, and you roll out in the same terminal. Objective: a code change travels commit → pipeline → registry → rolling update → visible to users.</em></p>
+<h3>One-time setup (2 min — your repo already exists and holds Labs 1–2)</h3>
+<p>Repo <strong>Settings → Secrets and variables → Actions → New repository secret</strong> — add both:</p>
+<ul>
+<li><code>DOCKERHUB_USERNAME</code> = your Docker Hub username</li>
+<li><code>DOCKERHUB_TOKEN</code> = the access token from your prerequisites sheet</li>
+</ul>
+<h3>Steps</h3>
+<ol>
+<li>
+<p><strong>Bump the app to v2.0 — right in your editor.</strong> In the codespace Explorer, open <code>app.py</code> and change two things: <code>VERSION = os.getenv("APP_VERSION", "2.0")</code> and the message to <code>"Now delivered by a pipeline!"</code>. Then open <code>Dockerfile</code> and change <code>ENV APP_VERSION=1.0</code> to <code>ENV APP_VERSION=2.0</code>. <strong>Ctrl+S / Cmd+S</strong> on both. <em>(This is the everyday developer loop — no web pencil icon needed, though editing on github.com works too; just <code>git pull</code> afterwards.)</em></p>
+</li>
+<li>
+<p><strong>Add the quality gate</strong> — create <code>test_app.py</code> (editor or paste-at-prompt):</p>
+</li>
+</ol>
+<pre><code class="language-bash">cat &gt; test_app.py &lt;&lt; 'EOF'
+from app import app
+
+def test_root():
+    r = app.test_client().get(&quot;/&quot;)
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data[&quot;service&quot;] == &quot;hello-cncf&quot;
+    assert data[&quot;version&quot;] == &quot;2.0&quot;
+
+def test_healthz():
+    assert app.test_client().get(&quot;/healthz&quot;).status_code == 200
+EOF
+</code></pre>
+<ol start="3">
+<li><strong>Declare the pipeline</strong> — create the folder and file <code>.github/workflows/cicd.yml</code>:</li>
+</ol>
+<pre><code class="language-bash">mkdir -p .github/workflows
+cat &gt; .github/workflows/cicd.yml &lt;&lt; 'EOF'
+name: CICD
+on: [push]
+
+jobs:
+  test-build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: &quot;3.12&quot;
+
+      - name: Run tests
+        run: |
+          pip install flask==3.0.3 pytest
+          pytest -v
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push v2.0
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-cncf:2.0 .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-cncf:2.0
+EOF
+</code></pre>
+<ol start="4">
+<li><strong>Commit and push — this push triggers the pipeline:</strong></li>
+</ol>
+<pre><code class="language-bash">git add -A
+git commit -m &quot;v2.0: message change + test + CI/CD pipeline&quot;
+git push origin main
+</code></pre>
+<p>Expected: ends with <code>main -&gt; main</code>. <strong>🔧 If the push is refused</strong> with a message about <code>workflow</code> scope: create <code>.github/workflows/cicd.yml</code> via the github.com web editor instead (repo → <strong>Add file → Create new file</strong>, type the full path, paste the YAML, commit), then <code>git pull</code> in the codespace.</p>
+<ol start="5">
+<li><strong>Watch it go green.</strong> Repo <strong>Actions</strong> tab → all steps ✓. Docker Hub now shows tag <code>2.0</code> beside <code>1.0</code> — the pipeline just did automatically everything you did by hand in Lab 1.</li>
+</ol>
+<p><strong>💾 Your work is already saved</strong> — the pipeline runs <em>from</em> your repo, so the code is on GitHub by definition.</p>
+<ol start="6">
+<li><strong>⭐ Roll it out</strong> — back in your codespace terminal:</li>
+</ol>
+<pre><code class="language-bash">kubectl set image deployment/hello-cncf web=&lt;DOCKERUSER&gt;/hello-cncf:2.0
+kubectl rollout status deployment/hello-cncf
+</code></pre>
+<p>Expected: <code>deployment "hello-cncf" successfully rolled out</code> — pods replaced one by one, zero downtime, gated by your readiness probe.</p>
+<ol start="7">
+<li><strong>⭐ Prove it to users:</strong></li>
+</ol>
+<pre><code class="language-bash">for i in $(seq 1 6); do curl -s $URL | grep -oE '&quot;(version|served_by)&quot;:&quot;[^&quot;]*&quot;' | paste -d' ' - -; done
+</code></pre>
+<p>Expected: every answer <code>"version":"2.0"</code>, still load-balanced across fresh pods. <em>(<code>$URL</code> empty? Paste the 🖥️ box from Lab 0.)</em></p>
+<ol start="8">
+<li><strong>Instant rollback:</strong></li>
+</ol>
+<pre><code class="language-bash">kubectl rollout undo deployment/hello-cncf
+curl -s $URL | grep -o '&quot;version&quot;:&quot;[^&quot;]*&quot;'
+</code></pre>
+<p>Expected: <code>"version":"1.0"</code>. Change is cheap in both directions.</p>
+<ol start="9">
+<li><strong>Correlate out loud:</strong> commit (GitHub) → tested &amp; built (Actions) → immutable versioned image (Docker Hub) → declarative rolling update (Kubernetes) → user-visible change (<code>version</code>) → one-command rollback. <strong>One app, one environment, the entire loop — and you operated every stage.</strong></li>
+</ol>
+<h3>💾 Final state check</h3>
+<pre><code class="language-bash">cd /workspaces/hello-cncf &amp;&amp; git status &amp;&amp; ls
+</code></pre>
+<p>Expected: <code>working tree clean</code> and <code>app.py  app.yaml  Dockerfile  kind-config.yaml  requirements.txt  test_app.py  README.md</code> (+ <code>.github/</code>) — your complete workshop artifact, permanently on GitHub. <strong>Everything you built today is reproducible from this repo: open a fresh codespace on it, run Lab 0 steps 4–5, apply <code>app.yaml</code>, and the app runs.</strong></p>
+<p>When you're done for the day, stop the codespace to conserve free hours: https://github.com/codespaces → <strong>⋯ → Stop codespace</strong> (deleting it is also safe — everything is pushed).</p>
+<h3>✅ Checkpoint 3</h3>
+<p>You can trace one change through every stage of the delivery loop and name the guarantee each stage provides.</p>
+<hr />
+<h2>Troubleshooting (foolproof table)</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Codespace won't start / quota message</td>
+<td>Free core-hours exhausted (rare in one workshop)</td>
+<td>github.com/codespaces → delete old codespaces; or Settings → Billing to check usage</td>
+</tr>
+<tr>
+<td><code>kubectl get nodes</code>: connection refused after reopening codespace</td>
+<td>kind node containers got new IPs on restart</td>
+<td>Use the <strong>🔄 recovery box</strong> in Lab 0 — delete + recreate cluster, re-apply <code>app.yaml</code> (~3 min)</td>
+</tr>
+<tr>
+<td><code>kind create cluster</code> fails / hangs</td>
+<td>Docker daemon still warming up on a fresh codespace</td>
+<td>Wait 20 s, <code>docker ps</code> to confirm Docker answers, re-run the kind line</td>
+</tr>
+<tr>
+<td>All 3 pods on <code>cncf-worker</code> only</td>
+<td>Control-plane taint not removed</td>
+<td>Run the <code>kubectl taint nodes cncf-control-plane ...</code> line from Lab 0 step 5, then <code>kubectl rollout restart deployment hello-cncf</code></td>
+</tr>
+<tr>
+<td><code>curl $URL</code> fails / <code>URL</code> is empty</td>
+<td>New terminal — shell variables don't carry over</td>
+<td>Paste the <strong>🖥️ restore-variables box</strong> from Lab 0</td>
+</tr>
+<tr>
+<td><code>curl localhost:&lt;nodeport&gt;</code> gives connection refused</td>
+<td>NodePorts live on the kind node's container IP, not localhost</td>
+<td>Use <code>$URL</code> (node IP + port) as shown in Lab 2 step 3</td>
+</tr>
+<tr>
+<td>A file contains a <code>cat &gt; ...</code> or <code>EOF</code> line</td>
+<td>Block pasted inside an open editor tab instead of the terminal</td>
+<td><code>rm &lt;file&gt;</code>, re-paste the whole block at the <code>$</code> prompt — or create the file in the VS Code editor with only the contents</td>
+</tr>
+<tr>
+<td><code>git push</code>: <code>refusing to allow ... workflow scope</code></td>
+<td>Codespace token can't create workflow files in some org setups</td>
+<td>Create <code>.github/workflows/cicd.yml</code> via the github.com web editor, then <code>git pull</code></td>
+</tr>
+<tr>
+<td><code>git push</code>: <code>rejected — non-fast-forward</code></td>
+<td>You edited files on github.com AND in the codespace</td>
+<td><code>git pull --rebase origin main</code>, then push again</td>
+</tr>
+<tr>
+<td><code>denied: requested access to the resource is denied</code> on <code>docker push</code></td>
+<td>Tag missing your username, or not logged in</td>
+<td><code>docker login</code>, re-tag <code>&lt;DOCKERUSER&gt;/hello-cncf:1.0</code>, push again</td>
+</tr>
+<tr>
+<td>Pods <code>ImagePullBackOff</code></td>
+<td>Username typo in app.yaml, or push skipped</td>
+<td><code>kubectl describe pod &lt;name&gt;</code> shows the pull error; fix the image ref, or use fallback <code>stefanprodan/podinfo</code> (port 9898)</td>
+</tr>
+<tr>
+<td>Pods <code>Pending</code></td>
+<td>Over-scaled the small cluster</td>
+<td><code>kubectl scale deployment hello-cncf --replicas=3</code></td>
+</tr>
+<tr>
+<td>curl loop shows one hostname only</td>
+<td>Other pods not Ready yet</td>
+<td><code>kubectl get pods</code> — wait for all <code>1/1</code>, retry</td>
+</tr>
+<tr>
+<td>Actions: <code>Username and password required</code></td>
+<td>Secrets missing/misnamed</td>
+<td>Exactly <code>DOCKERHUB_USERNAME</code> / <code>DOCKERHUB_TOKEN</code> under Settings → Secrets → Actions</td>
+</tr>
+<tr>
+<td>Actions: <code>insufficient_scope</code> on push</td>
+<td>Docker Hub token is read-only</td>
+<td>New token with <strong>Read &amp; Write</strong></td>
+</tr>
+<tr>
+<td>Tests fail <code>ModuleNotFoundError: flask</code></td>
+<td>pip line missed</td>
+<td><code>Run tests</code> step must <code>pip install flask==3.0.3 pytest</code></td>
+</tr>
+<tr>
+<td><code>kubectl set image</code>: container not found</td>
+<td>Name mismatch</td>
+<td>It's <code>web=</code> (container name from app.yaml)</td>
+</tr>
+<tr>
+<td>Rollout stuck</td>
+<td>v2.0 failing readiness</td>
+<td><code>kubectl describe pod &lt;new-pod&gt;</code>; <code>kubectl rollout undo</code> recovers instantly</td>
+</tr>
+</tbody>
+</table>
+<h2>Facilitator &amp; reuse notes</h2>
+<ul>
+<li>Recordings in <code>videos/</code> are <strong>Codespaces-native walkthroughs</strong> matching this guide (Lab 0 kind boot, <code>$URL</code> NodePort, editor-based Lab 3). Play a lab's video first, then release participants to reproduce it.</li>
+<li><strong>Killercoda twin package:</strong> <code>../killercoda/</code> (guides + Killercoda screen recordings).</li>
+<li><strong>Choosing a track:</strong> Codespaces gives persistence (no 60-minute cap, files survive stops), a real editor, and one fewer account — but consumes participant core-hours and needs the taint/<code>$URL</code> wrinkles above. Killercoda gives an instant pre-built cluster with <code>localhost</code> NodePorts — but evaporates hourly. Both run the identical app, labs, and checkpoints, so you can even mix tracks in one room.</li>
+<li>The <code>served_by</code> + <code>version</code> + <code>/healthz</code> trio is the reusable teaching pattern — steal it for any demo app.</li>
+<li>Assessment: fork the repo; grade = green pipeline + own Docker Hub tags 1.0 &amp; 2.0 + screenshot of the curl loop cycling ≥3 hostnames on v2.0.</li>
+<li><strong>Optional pre-baked environment:</strong> to skip Lab 0 steps 4–5 entirely, add a <code>.devcontainer/devcontainer.json</code> to the repo participants will open — Codespaces then pre-installs the tools on boot:</li>
+</ul>
+<pre><code class="language-json">{
+  &quot;image&quot;: &quot;mcr.microsoft.com/devcontainers/universal:2&quot;,
+  &quot;features&quot;: {
+    &quot;ghcr.io/devcontainers/features/kubectl-helm-minikube:1&quot;: { &quot;minikube&quot;: &quot;none&quot; },
+    &quot;ghcr.io/devcontainers-extra/features/kind:1&quot;: {}
+  }
+}
+</code></pre>
+<p>Participants would still run the <code>kind create cluster</code> step (the cluster itself can't be pre-baked into the image).</p>
+</body></html>

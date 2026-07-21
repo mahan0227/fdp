@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Readme</title><style>code{white-space:pre-wrap}</style><style>body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 40px 24px; color: #1E293B; line-height: 1.65; background: #FFFFFF; }
+h1 { color: #1E3A5F; font-family: Cambria, Georgia, serif; border-bottom: 3px solid #2196F3; padding-bottom: 10px; }
+h2 { color: #1E3A5F; font-family: Cambria, Georgia, serif; margin-top: 2em; }
+h3 { color: #2196F3; margin-top: 1.5em; }
+code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+pre { background: #0F172A; color: #E2E8F0; padding: 16px 20px; border-radius: 10px; overflow-x: auto; }
+pre code { background: none; color: inherit; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
+th { background: #1E3A5F; color: #fff; text-align: left; }
+th, td { border: 1px solid #CBD5E1; padding: 9px 13px; font-size: 0.95em; }
+tr:nth-child(even) { background: #F8FAFC; }
+blockquote { border-left: 4px solid #2196F3; background: #E3F2FD; margin: 1em 0; padding: 10px 18px; border-radius: 0 8px 8px 0; }
+a { color: #1E88E5; }
+li { margin: 4px 0; }
+input[type=checkbox] { transform: scale(1.15); margin-right: 8px; }
+hr { border: none; border-top: 1px solid #CBD5E1; margin: 2em 0; }</style></head><body>
+<h1>Lab Environment — GitHub Codespaces Track</h1>
+<p>Self-contained package for the Cloud Native Workshop labs on <strong>GitHub Codespaces</strong>.</p>
+<p>Participants may choose this <strong>or</strong> the Killercoda track (<code>../killercoda/</code>). Same Labs <strong>1 → 2 → 3</strong>.</p>
+<h2>What's in this folder</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prerequisites.md</code> / <code>.html</code></td>
+<td>Email to participants who chose Codespaces</td>
+</tr>
+<tr>
+<td><code>lab-guide.md</code> / <code>.html</code></td>
+<td>Hands-on guide: Lab 0 (kind) → Lab 1 → Lab 2 → Lab 3 (~70–80 min)</td>
+</tr>
+<tr>
+<td><code>demo-video-scripts.md</code> / <code>.html</code></td>
+<td>Shot-by-shot scripts for re-recording</td>
+</tr>
+<tr>
+<td><code>videos/lab1-build-and-ship.mp4</code></td>
+<td>Demo: boot codespace/kind, build, push</td>
+</tr>
+<tr>
+<td><code>videos/lab2-kubernetes-hosting.mp4</code></td>
+<td>Demo: deploy, <code>$URL</code> NodePort, load-balance, heal, scale</td>
+</tr>
+<tr>
+<td><code>videos/lab3-cicd-end-to-end.mp4</code></td>
+<td>Demo: pipeline → rollout → rollback</td>
+</tr>
+<tr>
+<td><code>videos/*-narration.json</code></td>
+<td>Scene timings for voice replacement</td>
+</tr>
+</tbody>
+</table>
+<h2>How to run this track</h2>
+<ol>
+<li>Start from the workshop <a href="../../prerequisites-chooser.md"><code>prerequisites-chooser</code></a>.</li>
+<li>Email this folder's <code>prerequisites.html</code>.</li>
+<li>Share <code>lab-guide.html</code> when labs begin.</li>
+<li>Optionally play each <code>videos/*.mp4</code> before that lab.</li>
+<li>Participants: create repo <code>hello-cncf</code> → <strong>Code → Codespaces → Create codespace on main</strong>.</li>
+</ol>
+<h2>Environment notes</h2>
+<ul>
+<li>No hourly wipe — codespace auto-stops when idle; files persist. Kind cluster may need rebuild after a stop (Lab 0 recovery box).</li>
+<li>Reach the app via <code>$URL</code> (kind node IP + NodePort), <strong>not</strong> <code>localhost</code>.</li>
+<li>Git push works automatically — no GitHub PAT.</li>
+<li>Uses free Codespaces core-hours (~4–8 of 120/month).</li>
+</ul>
+<h2>Twin track</h2>
+<p>Killercoda: <a href="../killercoda/"><code>../killercoda/</code></a>.</p>
+<h2>Regenerate walkthrough videos</h2>
+<pre><code class="language-bash">python3 tools/generate_codespaces_videos.py
+</code></pre>
+</body></html>

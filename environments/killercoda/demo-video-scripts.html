@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Demo Video Scripts</title><style>code{white-space:pre-wrap}</style><style>body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 40px 24px; color: #1E293B; line-height: 1.65; background: #FFFFFF; }
+h1 { color: #1E3A5F; font-family: Cambria, Georgia, serif; border-bottom: 3px solid #2196F3; padding-bottom: 10px; }
+h2 { color: #1E3A5F; font-family: Cambria, Georgia, serif; margin-top: 2em; }
+h3 { color: #2196F3; margin-top: 1.5em; }
+code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+pre { background: #0F172A; color: #E2E8F0; padding: 16px 20px; border-radius: 10px; overflow-x: auto; }
+pre code { background: none; color: inherit; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
+th { background: #1E3A5F; color: #fff; text-align: left; }
+th, td { border: 1px solid #CBD5E1; padding: 9px 13px; font-size: 0.95em; }
+tr:nth-child(even) { background: #F8FAFC; }
+blockquote { border-left: 4px solid #2196F3; background: #E3F2FD; margin: 1em 0; padding: 10px 18px; border-radius: 0 8px 8px 0; }
+a { color: #1E88E5; }
+li { margin: 4px 0; }
+input[type=checkbox] { transform: scale(1.15); margin-right: 8px; }
+hr { border: none; border-top: 1px solid #CBD5E1; margin: 2em 0; }</style></head><body>
+<h1>Demo Video Recording Scripts — Cloud Native Workshop Labs</h1>
+<h2>Killercoda Edition</h2>
+<p>Shot-by-shot scripts matching the Killercoda lab guide and MP4s in <code>environments/killercoda/videos/</code>.</p>
+<p><strong>Target output:</strong> 3 videos · Lab 1 ≈ 3–4 min · Lab 2 ≈ 3–4 min · Lab 3 ≈ 3–4 min<br />
+<strong>Environment:</strong> ONE Killercoda Kubernetes playground for Labs 1–2; GitHub in a second tab for Lab 3.</p>
+<blockquote>
+<p>Codespaces twin: <code>environments/codespaces/demo-video-scripts.md</code>.</p>
+</blockquote>
+<hr />
+<h1>VIDEO — Lab 1 · Build &amp; Ship the Microservice</h1>
+<p><strong>Start state:</strong> Killercoda Kubernetes playground, fresh session · GitHub repo <code>hello-cncf</code> created · tokens from prerequisites ready</p>
+<h3>🎬 SHOT 1 — Cold open</h3>
+<p>| 🗣️ SAY | "Welcome to the Cloud Native workshop labs. The entire hands on session runs in one free Killercoda browser session: a real two node Kubernetes cluster with Docker on board. You will install nothing on your computer. Three labs: build and ship, Kubernetes hosting, then CI/CD end to end." |</p>
+<h3>🎬 SHOT 2 — Lab 0 verify + clone</h3>
+<p>| ⌨️ TYPE | <code>kubectl get nodes</code> · docker guard · <code>git clone</code> into <code>~/hello-cncf</code> · wire push URL with <code>&lt;GHTOKEN&gt;</code> |
+| 🗣️ SAY | "Lab zero: two Ready nodes, Docker present, repo cloned, push credential wired once." |</p>
+<h3>🎬 SHOT 3 — Create app + Dockerfile</h3>
+<p>| ⌨️ TYPE | <code>cat &gt; app.py</code> and <code>Dockerfile</code> blocks from the lab guide |
+| 🗣️ SAY | "Served by exposes load balancing, version exposes rolling updates, health z is the probe hook." |</p>
+<h3>🎬 SHOT 4 — Build, isolate, push, save</h3>
+<p>| ⌨️ TYPE | <code>docker build</code> · run 8080/8081 · login · tag · push · <code>git commit</code> · <code>git push</code> |
+| 🗣️ SAY | "Build, prove isolation, ship to Docker Hub, and push — your code survives the sixty minute session cap." |
+| 🎬 | Stop recording |</p>
+<hr />
+<h1>VIDEO — Lab 2 · Host &amp; Manage on Kubernetes</h1>
+<p><strong>Start state:</strong> SAME Killercoda terminal · image pushed</p>
+<h3>🎬 SHOT 1 — Cold open</h3>
+<p>| 🗣️ SAY | "Lab 2, in the same Killercoda terminal. The image from Lab 1 will run replicated, load balanced, self healing, and health probed." |</p>
+<h3>🎬 SHOT 2 — Deploy + Service</h3>
+<p>| ⌨️ TYPE | <code>kubectl apply -f app.yaml</code> · <code>get pods -o wide</code> · <code>kubectl expose ... NodePort</code> · capture <code>$PORT</code> |
+| 🗣️ SAY | "Three pods across both nodes. The Service is one stable address." |</p>
+<h3>🎬 SHOT 3 — Load balance, heal, scale ⭐</h3>
+<p>| ⌨️ TYPE | curl loop on <code>localhost:$PORT</code> · delete a pod · scale 5 → 3 |
+| 🗣️ SAY | "Served by changes every request. Kill a pod — replacement appears. Scale is one number. Keep this session open for Lab 3." |
+| 🎬 | Stop recording |</p>
+<hr />
+<h1>VIDEO — Lab 3 · CI/CD End to End</h1>
+<p><strong>Start state:</strong> GitHub repo holds Labs 1–2 files · secrets set · Killercoda tab still open</p>
+<h3>🎬 SHOT 1 — Cold open</h3>
+<p>| 🗣️ SAY | "Lab 3: a code change travels through a pipeline into the registry and rolls out on the Killercoda cluster from Lab 2, with zero downtime." |</p>
+<h3>🎬 SHOT 2 — Bump to v2.0 + tests + workflow</h3>
+<p>| 🖱️/⌨️ | Edit existing <code>app.py</code> + <code>Dockerfile</code> · add <code>test_app.py</code> · add <code>.github/workflows/cicd.yml</code> · commit |
+| 🗣️ SAY | "That commit triggers Actions. Watch it go green and Docker Hub show tag two point zero." |</p>
+<h3>🎬 SHOT 3 — Rollout + proof + undo ⭐</h3>
+<p>| ⌨️ TYPE | <code>kubectl set image ...:2.0</code> · curl <code>localhost:$PORT</code> · <code>kubectl rollout undo</code> |
+| 🗣️ SAY | "Every response says version two point zero. Undo once — version one point zero is back." |
+| 🎬 | Stop recording |</p>
+<hr />
+<h2>After Recording</h2>
+<ul>
+<li><input type="checkbox" disabled /> Export 1080p H.264 MP4 into <code>environments/killercoda/videos/</code></li>
+<li><input type="checkbox" disabled /> Names: <code>lab1-build-and-ship.mp4</code>, <code>lab2-kubernetes-hosting.mp4</code>, <code>lab3-cicd-end-to-end.mp4</code></li>
+</ul>
+</body></html>

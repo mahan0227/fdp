@@ -1,0 +1,36 @@
+{
+  "video": "lab2-kubernetes-hosting.mp4",
+  "track": "codespaces",
+  "scenes": [
+    {
+      "scene": 1,
+      "start": 0.0,
+      "duration": 10.23,
+      "narration": "Lab 2, in the same Codespace. The image you pushed in Lab 1 will run on your kind cluster: replicated, load balanced, self healing, and health probed."
+    },
+    {
+      "scene": 2,
+      "start": 10.23,
+      "duration": 10.86,
+      "narration": "Apply the Deployment: three replicas of your Lab 1 image, each probed on slash health z. Watch the node column: pods spread across control plane and worker automatically."
+    },
+    {
+      "scene": 3,
+      "start": 21.08,
+      "duration": 12.43,
+      "narration": "Expose a Service. On Codespaces the NodePort lives on the kind node container I P, not localhost. Capture node I P and port into one URL variable \u2014 use that for every curl from here on."
+    },
+    {
+      "scene": 4,
+      "start": 33.51,
+      "duration": 13.56,
+      "narration": "Eight requests to one address: served by changes every time \u2014 that is load balancing. Delete a pod: a replacement appears immediately. Scale to five, then back to three. Keep this codespace open for Lab 3."
+    },
+    {
+      "scene": 5,
+      "start": 47.07,
+      "duration": 9.23,
+      "narration": "Recap: the same image, now replicated across two nodes, load balanced through served by, self healing on failure, and scaled with one command."
+    }
+  ]
+}

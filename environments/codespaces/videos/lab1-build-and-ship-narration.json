@@ -1,0 +1,36 @@
+{
+  "video": "lab1-build-and-ship.mp4",
+  "track": "codespaces",
+  "scenes": [
+    {
+      "scene": 1,
+      "start": 0.0,
+      "duration": 18.64,
+      "narration": "Welcome to the Cloud Native workshop labs on GitHub Codespaces. Your whole session runs in one codespace: a real VS Code editor, Docker, and a two node Kubernetes cluster you create with kind. You install nothing on your computer. In this first lab we build a microservice, containerize it, and ship it to a registry."
+    },
+    {
+      "scene": 2,
+      "start": 18.64,
+      "duration": 17.66,
+      "narration": "Lab zero: create the hello c n c f repo, open a codespace on main, verify Docker, install kubectl and kind, then create a two node kind cluster. Untaint the control plane so pods can schedule on both nodes \u2014 that makes load balancing visible in Lab 2."
+    },
+    {
+      "scene": 3,
+      "start": 36.3,
+      "duration": 13.71,
+      "narration": "Create hello c n c f: a tiny Flask service designed so the platform becomes visible. It returns served by, the hostname answering each request, a version field, and a health endpoint Kubernetes will probe."
+    },
+    {
+      "scene": 4,
+      "start": 50.0,
+      "duration": 14.28,
+      "narration": "Build the image, run it, prove isolation with a second container on port eighty eighty one, then log in to Docker Hub, tag with your username, and push. Commit and push your files \u2014 Codespaces authenticates git automatically."
+    },
+    {
+      "scene": 5,
+      "start": 64.28,
+      "duration": 11.87,
+      "narration": "Recap: in one codespace you built a purpose designed microservice, containerized it, proved isolation, and shipped a versioned image. Stay here \u2014 Lab 2 begins in this exact terminal."
+    }
+  ]
+}

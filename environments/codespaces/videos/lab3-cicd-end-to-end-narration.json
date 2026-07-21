@@ -1,0 +1,30 @@
+{
+  "video": "lab3-cicd-end-to-end.mp4",
+  "track": "codespaces",
+  "scenes": [
+    {
+      "scene": 1,
+      "start": 0.0,
+      "duration": 13.27,
+      "narration": "Lab 3: a code change travels commit, to pipeline, to registry, to a rolling update on the same kind cluster, with zero downtime. Edit, commit, and push from the codespace \u2014 Actions builds in the cloud."
+    },
+    {
+      "scene": 2,
+      "start": 13.27,
+      "duration": 11.06,
+      "narration": "Add the two Actions secrets, bump the app to version two point zero in the editor, add tests and the CICD workflow, then commit and push. That push triggers the pipeline."
+    },
+    {
+      "scene": 3,
+      "start": 24.34,
+      "duration": 13.49,
+      "narration": "When Actions is green, roll the new image into the cluster. Curl your URL: every answer says version two point zero, still load balanced. Undo once \u2014 version one point zero is back. Change is cheap in both directions."
+    },
+    {
+      "scene": 4,
+      "start": 37.83,
+      "duration": 14.44,
+      "narration": "Correlate the journey: commit on GitHub, tested and built by Actions, immutable image on Docker Hub, declarative rolling update on Kubernetes, visible through the version field, reversible in one command. One application, end to end, on GitHub Codespaces."
+    }
+  ]
+}
